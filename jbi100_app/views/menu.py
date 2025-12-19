@@ -40,7 +40,8 @@ def generate_control_card():
                 options=[{"label": i, "value": i} for i in color_list2],
                 value=color_list2[0],
             ),
-        ], style={"textAlign": "float-left"}
+        ],
+        style={"textAlign": "float-left"},
     )
 
 
