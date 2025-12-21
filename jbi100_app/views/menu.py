@@ -10,12 +10,13 @@ def generate_description_card():
             html.Div(
                 id="intro",
                 children=(
-                    "Weekly demand/admission/refusal dinamiklerini incelemek için "
-                    "JBI100 Dash template üzerine kurulmuş kontrol paneli."
+                    "A control panel built on the JBI100 Dash template for exploring "
+                    "weekly demand, admissions, and refusal dynamics."
                 ),
             ),
         ],
     )
+
 
 
 def generate_control_card(services: list[str], default_service: str):

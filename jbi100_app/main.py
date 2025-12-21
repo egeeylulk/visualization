@@ -11,8 +11,8 @@ def create_app():
     app = Dash(__name__)
     app.title = "Hospital Beds Control Panel"
 
-    # DATA
-    df, cols = load_hospitalbeds("data")
+    # DATA (UPDATED: now returns 3 values)
+    df, cols, extras = load_hospitalbeds("data")
 
     # service values as clean strings
     services = sorted(df[cols.service].dropna().astype(str).unique().tolist())
@@ -27,7 +27,6 @@ def create_app():
         )
 
     def _fmt_int(x):
-        # Handles None/NaN safely
         if x is None:
             return "n/a"
         try:
@@ -65,7 +64,6 @@ def create_app():
                         id="left-column",
                         children=make_menu_layout(services),
                     ),
-
                     # RIGHT CONTENT
                     html.Div(
                         className="eight columns",
@@ -80,12 +78,10 @@ def create_app():
                                     html.Div(className="four columns", children=kpi_card("Refusal Rate", "—")),
                                 ],
                             ),
-
                             html.Div(
                                 className="graph_card",
                                 children=[html.H6("Weekly Timeline"), dcc.Graph(id="timeline")],
                             ),
-
                             html.Div(
                                 className="graph_card",
                                 children=[html.H6("Service × Week Heatmap"), dcc.Graph(id="heatmap")],
@@ -104,10 +100,14 @@ def create_app():
             return dff[cols.admissions]
         if metric == "refusals" and getattr(cols, "refusals", None):
             return dff[cols.refusals]
+        if metric == "beds" and getattr(cols, "beds", None):
+            return dff[cols.beds]
+        # NEW: staff availability derived from staff_schedule.csv -> available_staff
+        if metric == "staff" and getattr(cols, "staff", None):
+            return dff[cols.staff]
         if metric == "refusal_rate" and getattr(cols, "requests", None) and getattr(cols, "refusals", None):
             denom = dff[cols.requests].replace(0, pd.NA)
             return (dff[cols.refusals] / denom).fillna(0)
-        # fallback zeros
         return pd.Series([0] * len(dff))
 
     @app.callback(
@@ -124,7 +124,6 @@ def create_app():
             dff = df
             service_label = "All services"
         else:
-            # compare as strings to avoid dtype mismatch
             dff = df[df[cols.service].astype(str) == str(service)]
             service_label = str(service)
 
