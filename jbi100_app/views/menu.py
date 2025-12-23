@@ -1,49 +1,71 @@
+# jbi100_app/menu.py
 from dash import dcc, html
-from ..config import color_list1, color_list2
 
 
 def generate_description_card():
-    """
-
-    :return: A Div containing dashboard title & descriptions.
-    """
     return html.Div(
         id="description-card",
         children=[
-            html.H5("Example dashboard"),
+            html.H5("Hospital Beds Control Panel"),
             html.Div(
                 id="intro",
-                children="You can use this as a basic template for your JBI100 visualization project.",
+                children=(
+                    "A control panel built on the JBI100 Dash template for exploring "
+                    "weekly demand, admissions, and refusal dynamics."
+                ),
             ),
         ],
     )
 
 
-def generate_control_card():
-    """
 
-    :return: A Div containing controls for graphs.
-    """
+def generate_control_card(services: list[str], default_service: str):
     return html.Div(
         id="control-card",
         children=[
-            html.Label("Color scatterplot 1"),
+            html.Label("Service / Department"),
             dcc.Dropdown(
-                id="select-color-scatter-1",
-                options=[{"label": i, "value": i} for i in color_list1],
-                value=color_list1[0],
+                id="service-select",
+                options=[{"label": "All services", "value": "__ALL__"}]
+                + [{"label": s, "value": s} for s in services],
+                value="__ALL__",
+                clearable=False,
             ),
             html.Br(),
-            html.Label("Color scatterplot 2"),
+
+            html.Label("Timeline metric"),
             dcc.Dropdown(
-                id="select-color-scatter-2",
-                options=[{"label": i, "value": i} for i in color_list2],
-                value=color_list2[0],
+                id="timeline-metric",
+                options=[
+                    {"label": "Requests", "value": "requests"},
+                    {"label": "Admissions", "value": "admissions"},
+                    {"label": "Refusals", "value": "refusals"},
+                    {"label": "Refusal rate", "value": "refusal_rate"},
+                    {"label": "Beds (capacity)", "value": "beds"},
+                    {"label": "Staff (capacity)", "value": "staff"},
+                ],
+                value="refusals",
+                clearable=False,
+            ),
+            html.Br(),
+
+            html.Label("Heatmap metric"),
+            dcc.Dropdown(
+                id="heatmap-metric",
+                options=[
+                    {"label": "Refusals", "value": "refusals"},
+                    {"label": "Refusal rate", "value": "refusal_rate"},
+                    {"label": "Requests", "value": "requests"},
+                    {"label": "Admissions", "value": "admissions"},
+                ],
+                value="refusal_rate",
+                clearable=False,
             ),
         ],
-        style={"textAlign": "float-left"},
+        style={"textAlign": "left"},
     )
 
 
-def make_menu_layout():
-    return [generate_description_card(), generate_control_card()]
+def make_menu_layout(services: list[str]):
+    default_service = services[0] if services else "__ALL__"
+    return [generate_description_card(), generate_control_card(services, default_service)]
