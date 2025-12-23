@@ -15,7 +15,7 @@ from .data import load_hospitalbeds
 
 def create_app():
     app = Dash(__name__)
-    app.title = "Hospital Beds Control Panel"
+    app.title = "BedFlow Diagnostic Dashboard"
 
     # DATA (UPDATED: now returns 3 values)
     df, cols, extras = load_hospitalbeds("data")
@@ -45,78 +45,397 @@ def create_app():
                     "comparison_mode": "single",
                 },
             ),
+            # ========== SCREEN 1: PROBLEM LOCATOR (Always Visible) ==========
             html.Div(
-                className="row",
+                id="screen-1",
+                className="screen-1",
                 children=[
-                    # LEFT MENU
                     html.Div(
-                        className="three columns",
-                        id="left-column",
-                        children=make_menu_layout(services, events, max_week),
-                    ),
-                    # RIGHT CONTENT
-                    html.Div(
-                        className="nine columns",
-                        id="right-column",
+                        className="screen-1-layout",
                         children=[
-                            # ========== LAYER 1: Problem Location (Always Visible) ==========
+                            # LEFT SIDEBAR
                             html.Div(
-                                id="layer-1",
+                                className="sidebar",
+                                id="left-column",
                                 children=[
-                                    # View 1: Problem Locator Heatmap
+                                    # Mobile drawer toggle (hidden on desktop)
+                                    html.Button(
+                                        "☰ Controls",
+                                        id="sidebar-toggle",
+                                        className="sidebar-toggle",
+                                    ),
                                     html.Div(
-                                        className="graph_card",
-                                        style={"border": "2px solid #3498db"},
+                                        id="sidebar-content",
+                                        className="sidebar-content",
+                                        children=make_menu_layout(
+                                            services, events, max_week
+                                        ),
+                                    ),
+                                ],
+                            ),
+                            # MAIN HEATMAP AREA
+                            html.Div(
+                                className="main-content",
+                                id="right-column",
+                                children=[
+                                    html.Div(
+                                        className="graph_card heatmap-card",
                                         children=[
                                             html.H6(
-                                                "1️⃣ Problem Locator — Service × Week",
+                                                "🔍 Problem Locator — Service × Week",
                                                 style={"color": "#2c3e50"},
                                             ),
                                             html.P(
                                                 "Click a cell to begin diagnosis →",
                                                 style={
-                                                    "fontSize": "11px",
+                                                    "fontSize": "12px",
                                                     "color": "#888",
-                                                    "marginBottom": "5px",
+                                                    "marginBottom": "8px",
                                                 },
                                             ),
                                             dcc.Graph(
                                                 id="heatmap",
-                                                style={"height": "300px"},
+                                                style={"height": "350px"},
                                                 config={"displayModeBar": True},
                                             ),
                                         ],
                                     ),
                                 ],
                             ),
-                            # ========== LAYER 2: Diagnosis (Conditional) ==========
+                        ],
+                    ),
+                ],
+            ),
+            # ========== PLACEHOLDER: Instructional message (shown when no selection) ==========
+            html.Div(
+                id="screen-2-placeholder",
+                className="screen-2-placeholder",
+                children=[
+                    html.Div(
+                        className="placeholder-content",
+                        children=[
                             html.Div(
-                                id="layer-2",
+                                className="placeholder-icon-pulse",
+                                children=[html.Span("🔍", style={"fontSize": "48px"})],
+                            ),
+                            html.H5(
+                                "Select a high-value cell to investigate",
+                                style={
+                                    "color": "#2c3e50",
+                                    "marginTop": "16px",
+                                    "fontWeight": "600",
+                                },
+                            ),
+                            html.P(
+                                "Click a dark red cell in the heatmap above — these indicate potential problem areas requiring diagnosis.",
+                                style={
+                                    "color": "#666",
+                                    "fontSize": "14px",
+                                    "maxWidth": "400px",
+                                    "margin": "8px auto",
+                                },
+                            ),
+                            html.Div(
+                                className="placeholder-workflow-preview",
+                                style={
+                                    "marginTop": "24px",
+                                    "padding": "16px",
+                                    "backgroundColor": "#fff",
+                                    "borderRadius": "8px",
+                                    "boxShadow": "0 2px 8px rgba(0,0,0,0.1)",
+                                },
+                                children=[
+                                    html.P(
+                                        "What you'll discover:",
+                                        style={
+                                            "fontWeight": "bold",
+                                            "fontSize": "13px",
+                                            "color": "#2c3e50",
+                                            "marginBottom": "12px",
+                                        },
+                                    ),
+                                    html.Div(
+                                        style={
+                                            "display": "flex",
+                                            "justifyContent": "center",
+                                            "gap": "20px",
+                                            "flexWrap": "wrap",
+                                        },
+                                        children=[
+                                            html.Div(
+                                                [
+                                                    html.Span(
+                                                        "📊", style={"fontSize": "24px"}
+                                                    ),
+                                                    html.P(
+                                                        "Timeline",
+                                                        style={
+                                                            "fontSize": "11px",
+                                                            "color": "#666",
+                                                            "margin": "4px 0 0",
+                                                        },
+                                                    ),
+                                                    html.P(
+                                                        "What happened?",
+                                                        style={
+                                                            "fontSize": "10px",
+                                                            "color": "#999",
+                                                            "margin": "0",
+                                                        },
+                                                    ),
+                                                ],
+                                                style={"textAlign": "center"},
+                                            ),
+                                            html.Div(
+                                                [
+                                                    html.Span(
+                                                        "💔", style={"fontSize": "24px"}
+                                                    ),
+                                                    html.P(
+                                                        "Impact",
+                                                        style={
+                                                            "fontSize": "11px",
+                                                            "color": "#666",
+                                                            "margin": "4px 0 0",
+                                                        },
+                                                    ),
+                                                    html.P(
+                                                        "What was the cost?",
+                                                        style={
+                                                            "fontSize": "10px",
+                                                            "color": "#999",
+                                                            "margin": "0",
+                                                        },
+                                                    ),
+                                                ],
+                                                style={"textAlign": "center"},
+                                            ),
+                                            html.Div(
+                                                [
+                                                    html.Span(
+                                                        "⚠️", style={"fontSize": "24px"}
+                                                    ),
+                                                    html.P(
+                                                        "Pressure",
+                                                        style={
+                                                            "fontSize": "11px",
+                                                            "color": "#666",
+                                                            "margin": "4px 0 0",
+                                                        },
+                                                    ),
+                                                    html.P(
+                                                        "How severe?",
+                                                        style={
+                                                            "fontSize": "10px",
+                                                            "color": "#999",
+                                                            "margin": "0",
+                                                        },
+                                                    ),
+                                                ],
+                                                style={"textAlign": "center"},
+                                            ),
+                                            html.Div(
+                                                [
+                                                    html.Span(
+                                                        "📋", style={"fontSize": "24px"}
+                                                    ),
+                                                    html.P(
+                                                        "Explanation",
+                                                        style={
+                                                            "fontSize": "11px",
+                                                            "color": "#666",
+                                                            "margin": "4px 0 0",
+                                                        },
+                                                    ),
+                                                    html.P(
+                                                        "Summary",
+                                                        style={
+                                                            "fontSize": "10px",
+                                                            "color": "#999",
+                                                            "margin": "0",
+                                                        },
+                                                    ),
+                                                ],
+                                                style={"textAlign": "center"},
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+            # ========== SCREEN 2: DIAGNOSTIC WORKSPACE (Hidden until selection) ==========
+            html.Div(
+                id="screen-2",
+                className="screen-2",
+                style={"display": "none"},
+                children=[
+                    # STICKY MINI-HEADER with navigation
+                    html.Div(
+                        id="screen-2-header",
+                        className="screen-2-header",
+                        children=[
+                            html.Div(
+                                className="header-left",
                                 children=[
                                     html.Div(
-                                        className="row",
+                                        className="header-title-row",
                                         children=[
-                                            # View 2: Diagnostic Timeline
+                                            html.Span(
+                                                "📊 Diagnostic Workspace",
+                                                style={
+                                                    "fontWeight": "bold",
+                                                    "fontSize": "16px",
+                                                },
+                                            ),
+                                            html.Span(
+                                                id="header-selection-display",
+                                                style={
+                                                    "marginLeft": "16px",
+                                                    "color": "#27ae60",
+                                                },
+                                            ),
+                                        ],
+                                    ),
+                                    # Workflow step indicator
+                                    html.Div(
+                                        className="workflow-indicator",
+                                        children=[
+                                            html.Span(
+                                                "✓ Locate",
+                                                className="workflow-step completed",
+                                            ),
+                                            html.Span("→", className="workflow-arrow"),
+                                            html.Span(
+                                                "Timeline",
+                                                className="workflow-step active",
+                                                id="step-timeline",
+                                            ),
+                                            html.Span("→", className="workflow-arrow"),
+                                            html.Span(
+                                                "Impact",
+                                                className="workflow-step",
+                                                id="step-impact",
+                                            ),
+                                            html.Span("→", className="workflow-arrow"),
+                                            html.Span(
+                                                "Explain",
+                                                className="workflow-step",
+                                                id="step-explain",
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                            html.Div(
+                                className="header-right",
+                                children=[
+                                    html.Button(
+                                        "↑ Back to Locator",
+                                        id="back-to-locator-btn",
+                                        className="nav-button",
+                                    ),
+                                    html.Button(
+                                        "✕ Clear Selection",
+                                        id="header-clear-btn",
+                                        className="nav-button clear-button",
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    # ========== SECTION 2A: Diagnostic Timeline (FULL WIDTH) ==========
+                    html.Div(
+                        className="section-2a",
+                        children=[
+                            html.Div(
+                                className="graph_card",
+                                id="diagnostic-timeline-card",
+                                children=[
+                                    html.H6(
+                                        "2A️⃣ Diagnostic Timeline — Events & Constraints",
+                                        style={"color": "#2c3e50"},
+                                    ),
+                                    html.P(
+                                        "What happened operationally, and when?",
+                                        style={
+                                            "fontSize": "12px",
+                                            "color": "#888",
+                                            "margin": "0 7px 8px",
+                                        },
+                                    ),
+                                    dcc.Graph(
+                                        id="event-timeline",
+                                        style={"height": "500px"},
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    # ========== SECTION 2B: Impact & Context (SPLIT VIEW) ==========
+                    html.Div(
+                        className="section-2b",
+                        children=[
+                            html.Div(
+                                className="split-view-container",
+                                children=[
+                                    # LEFT: Impact Validation (60%)
+                                    html.Div(
+                                        className="impact-panel",
+                                        children=[
                                             html.Div(
-                                                className="twelve columns",
+                                                className="graph_card",
+                                                id="impact-validation-card",
                                                 children=[
-                                                    html.Div(
-                                                        className="graph_card",
-                                                        id="diagnostic-timeline-card",
-                                                        children=[
-                                                            html.H6(
-                                                                "2️⃣ Diagnostic Timeline — Events & Constraints",
-                                                                style={
-                                                                    "color": "#2c3e50"
-                                                                },
-                                                            ),
-                                                            dcc.Graph(
-                                                                id="event-timeline",
-                                                                style={
-                                                                    "height": "600px"
-                                                                },
-                                                            ),
-                                                        ],
+                                                    html.H6(
+                                                        "2B-L️⃣ Impact Validation — Morale & Satisfaction",
+                                                        style={"color": "#2c3e50"},
+                                                    ),
+                                                    html.P(
+                                                        "Validate consequences of the problem",
+                                                        style={
+                                                            "fontSize": "12px",
+                                                            "color": "#888",
+                                                            "margin": "0 7px 8px",
+                                                        },
+                                                    ),
+                                                    dcc.Graph(
+                                                        id="human-cost-timeline",
+                                                        style={"height": "350px"},
+                                                    ),
+                                                ],
+                                            ),
+                                        ],
+                                    ),
+                                    # RIGHT: Pressure Analysis (40%)
+                                    html.Div(
+                                        className="pressure-panel",
+                                        children=[
+                                            html.Div(
+                                                className="graph_card",
+                                                id="pressure-analysis-card",
+                                                children=[
+                                                    html.H6(
+                                                        "2B-R️⃣ Pressure Analysis — Staffing vs Utilization",
+                                                        style={"color": "#2c3e50"},
+                                                    ),
+                                                    html.P(
+                                                        "Assess severity relative to baseline",
+                                                        style={
+                                                            "fontSize": "12px",
+                                                            "color": "#888",
+                                                            "margin": "0 7px 8px",
+                                                        },
+                                                    ),
+                                                    dcc.Graph(
+                                                        id="scatter",
+                                                        style={"height": "350px"},
+                                                        config={
+                                                            "displayModeBar": "hover",
+                                                            "displaylogo": False,
+                                                        },
                                                     ),
                                                 ],
                                             ),
@@ -124,100 +443,31 @@ def create_app():
                                     ),
                                 ],
                             ),
-                            # ========== LAYER 3: Validation & Testing ==========
+                        ],
+                    ),
+                    # ========== SECTION 2C: Case Explanation (FULL WIDTH) ==========
+                    html.Div(
+                        className="section-2c",
+                        children=[
                             html.Div(
-                                id="layer-3",
+                                className="graph_card",
+                                id="case-explanation-card",
                                 children=[
-                                    # View 3: Impact Validation (FULL WIDTH)
-                                    html.Div(
-                                        className="row",
-                                        children=[
-                                            html.Div(
-                                                className="twelve columns",
-                                                children=[
-                                                    html.Div(
-                                                        className="graph_card",
-                                                        id="impact-validation-card",
-                                                        children=[
-                                                            html.H6(
-                                                                "3️⃣ Impact Validation",
-                                                                style={
-                                                                    "color": "#2c3e50"
-                                                                },
-                                                            ),
-                                                            dcc.Graph(
-                                                                id="human-cost-timeline",
-                                                                style={
-                                                                    "height": "350px"
-                                                                },
-                                                            ),
-                                                        ],
-                                                    ),
-                                                ],
-                                            ),
-                                        ],
+                                    html.H6(
+                                        "2C️⃣ Case Explanation — Selected Service-Week",
+                                        style={"color": "#2c3e50"},
                                     ),
-                                    # View 4: Pressure Analysis (FULL WIDTH, BELOW)
-                                    html.Div(
-                                        className="row",
-                                        children=[
-                                            html.Div(
-                                                className="twelve columns",
-                                                children=[
-                                                    html.Div(
-                                                        className="graph_card",
-                                                        id="pressure-analysis-card",
-                                                        children=[
-                                                            html.H6(
-                                                                "4️⃣ Pressure Analysis",
-                                                                style={
-                                                                    "color": "#2c3e50"
-                                                                },
-                                                            ),
-                                                            dcc.Graph(
-                                                                id="scatter",
-                                                                style={
-                                                                    "height": "400px"
-                                                                },
-                                                                config={
-                                                                    "displayModeBar": "hover",
-                                                                    "displaylogo": False,
-                                                                },
-                                                            ),
-                                                        ],
-                                                    ),
-                                                ],
-                                            ),
-                                        ],
+                                    html.P(
+                                        "How do I explain this case to someone else?",
+                                        style={
+                                            "fontSize": "12px",
+                                            "color": "#888",
+                                            "margin": "0 7px 8px",
+                                        },
                                     ),
-                                    # View 5: Case Explanation (FULL WIDTH, BELOW)
-                                    html.Div(
-                                        className="row",
-                                        children=[
-                                            html.Div(
-                                                className="twelve columns",
-                                                children=[
-                                                    html.Div(
-                                                        className="graph_card",
-                                                        id="case-explanation-card",
-                                                        children=[
-                                                            html.H6(
-                                                                "5️⃣ Case Explanation — Selected Service-Week",
-                                                                style={
-                                                                    "color": "#2c3e50"
-                                                                },
-                                                            ),
-                                                            dcc.Graph(
-                                                                id="capacity-breakdown",
-                                                                style={
-                                                                    "height": "280px"
-                                                                },
-                                                            ),
-                                                        ],
-                                                    ),
-                                                ],
-                                            ),
-                                        ],
+                                    dcc.Graph(
+                                        id="capacity-breakdown",
+                                        style={"height": "300px"},
                                     ),
                                 ],
                             ),
@@ -259,10 +509,11 @@ def create_app():
         Output("global-state", "data"),
         Input("heatmap", "clickData"),
         Input("clear-selection-btn", "n_clicks"),
+        Input("header-clear-btn", "n_clicks"),
         State("global-state", "data"),
         prevent_initial_call=True,
     )
-    def update_selection(click_data, clear_clicks, current_state):
+    def update_selection(click_data, clear_clicks, header_clear_clicks, current_state):
         from dash import callback_context
 
         if not callback_context.triggered:
@@ -270,8 +521,8 @@ def create_app():
 
         triggered_id = callback_context.triggered[0]["prop_id"].split(".")[0]
 
-        # Handle clear button
-        if triggered_id == "clear-selection-btn":
+        # Handle clear buttons (both sidebar and header)
+        if triggered_id in ["clear-selection-btn", "header-clear-btn"]:
             current_state["selected_service"] = None
             current_state["selected_week"] = None
             return current_state
@@ -362,25 +613,96 @@ def create_app():
 
     # ========== CALLBACK: Layer visibility based on selection ==========
     @app.callback(
-        Output("layer-2", "style"),
-        Output("layer-3", "style"),
+        Output("screen-2", "style"),
+        Output("screen-2-placeholder", "style"),
         Input("global-state", "data"),
     )
-    def update_layer_visibility(state):
+    def update_screen_visibility(state):
         has_selection = state.get("selected_service") and state.get("selected_week")
 
         if has_selection:
-            # Show all layers with full opacity
-            return {"opacity": "1", "transition": "opacity 0.3s"}, {
-                "opacity": "1",
-                "transition": "opacity 0.3s",
-            }
+            # Show SCREEN 2, hide placeholder
+            return {"display": "block"}, {"display": "none"}
         else:
-            # Dim layers 2 and 3 when no selection
-            return {"opacity": "0.4", "transition": "opacity 0.3s"}, {
-                "opacity": "0.4",
-                "transition": "opacity 0.3s",
+            # Hide SCREEN 2, show placeholder
+            return {"display": "none"}, {"display": "block"}
+
+    # ========== CALLBACK: Update header selection display ==========
+    @app.callback(
+        Output("header-selection-display", "children"),
+        Input("global-state", "data"),
+    )
+    def update_header_selection(state):
+        service = state.get("selected_service")
+        week = state.get("selected_week")
+
+        if service and week:
+            service_display = service.replace("_", " ").title()
+            return f"✅ {service_display} — Week {week}"
+        return ""
+
+    # ========== CLIENTSIDE CALLBACK: Auto-scroll to SCREEN 2 on selection ==========
+    app.clientside_callback(
+        """
+        function(state) {
+            if (state && state.selected_service && state.selected_week) {
+                // Small delay to allow DOM to update
+                setTimeout(function() {
+                    var screen2 = document.getElementById('screen-2');
+                    if (screen2) {
+                        // Check for reduced motion preference
+                        var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                        screen2.scrollIntoView({
+                            behavior: prefersReducedMotion ? 'auto' : 'smooth',
+                            block: 'start'
+                        });
+                    }
+                }, 100);
             }
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output("screen-2", "data-scroll-trigger"),
+        Input("global-state", "data"),
+    )
+
+    # ========== CLIENTSIDE CALLBACK: Back to Locator button ==========
+    app.clientside_callback(
+        """
+        function(n_clicks) {
+            if (n_clicks) {
+                var screen1 = document.getElementById('screen-1');
+                if (screen1) {
+                    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    screen1.scrollIntoView({
+                        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output("screen-1", "data-scroll-trigger"),
+        Input("back-to-locator-btn", "n_clicks"),
+    )
+
+    # ========== CLIENTSIDE CALLBACK: Sidebar toggle for mobile ==========
+    app.clientside_callback(
+        """
+        function(n_clicks) {
+            if (n_clicks) {
+                var sidebar = document.getElementById('sidebar-content');
+                if (sidebar) {
+                    sidebar.classList.toggle('sidebar-expanded');
+                }
+            }
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output("sidebar-content", "data-toggle-trigger"),
+        Input("sidebar-toggle", "n_clicks"),
+    )
 
     # ========== MODULAR CALLBACKS: Update visualizations independently ==========
 

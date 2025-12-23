@@ -90,25 +90,13 @@ def generate_control_card(services: list[str], events: list[str], max_week: int)
                 },
             ),
             html.Br(),
-            # ========== COMPARISON MODE ==========
-            html.H6(
-                "⚖️ Comparison Mode", style={"marginTop": "5px", "color": "#2c3e50"}
-            ),
+            # Hidden comparison mode (single service only - comparison modes deferred)
             dcc.RadioItems(
                 id="comparison-mode",
-                options=[
-                    {"label": " Single Service", "value": "single"},
-                    {"label": " Compare Services", "value": "services"},
-                    {"label": " Compare Weeks", "value": "weeks"},
-                ],
+                options=[{"label": "Single Service", "value": "single"}],
                 value="single",
-                labelStyle={
-                    "display": "block",
-                    "marginBottom": "4px",
-                    "fontSize": "12px",
-                },
+                style={"display": "none"},
             ),
-            html.Br(),
             # ========== SERVICE FILTER (for single mode) ==========
             html.Div(
                 id="service-filter-container",
