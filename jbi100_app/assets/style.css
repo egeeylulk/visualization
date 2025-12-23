@@ -46,3 +46,6 @@ h5 {
     padding-bottom: 7px;
     border-bottom:  1px solid #ccc;
 }
+.container {
+    max-width: 2000px;
+}
