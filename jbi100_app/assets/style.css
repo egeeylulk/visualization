@@ -1,74 +1,503 @@
+/* ========================================
+   BedFlow Diagnostic Dashboard - Styles
+   UI Color System (Light & Dark Themes)
+   WCAG AA Compliant
+   ======================================== */
+
+/* ========== CSS CUSTOM PROPERTIES (LIGHT THEME - DEFAULT) ========== */
+:root {
+    /* Core Palette (Neutral) */
+    --color-background: #F8FAFC;
+    --color-surface: #FFFFFF;
+    --color-surface-alt: #F1F5F9;
+    --color-border: #E2E8F0;
+    --color-disabled: #CBD5E1;
+
+    /* Text Colors */
+    --color-text-primary: #0F172A;
+    --color-text-secondary: #475569;
+    --color-text-muted: #94A3B8;
+    --color-text-inverse: #FFFFFF;
+
+    /* Brand / Action Colors */
+    --color-primary: #2563EB;
+    --color-primary-hover: #1D4ED8;
+    --color-primary-active: #1E40AF;
+    --color-primary-light: rgba(37, 99, 235, 0.1);
+    --color-accent: #0EA5E9;
+
+    /* Semantic Colors */
+    --color-success: #16A34A;
+    --color-warning: #F59E0B;
+    --color-error: #DC2626;
+    --color-info: #0284C7;
+
+    /* Chart Colors */
+    --chart-blue: #2563EB;
+    --chart-green: #16A34A;
+    --chart-amber: #F59E0B;
+    --chart-red: #DC2626;
+    --chart-purple: #7C3AED;
+    --chart-cyan: #0891B2;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --shadow-dropdown: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-overlay: rgba(0, 0, 0, 0.4);
+
+    /* View accent colors */
+    --view-1-accent: #2563EB;
+    --view-2-accent: #7C3AED;
+    --view-3-accent: #DC2626;
+}
+
+/* ========== DARK THEME ========== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Core Palette (Neutral) */
+        --color-background: #0F172A;
+        --color-surface: #1E293B;
+        --color-surface-alt: #334155;
+        --color-border: #475569;
+        --color-disabled: #64748B;
+
+        /* Text Colors */
+        --color-text-primary: #F8FAFC;
+        --color-text-secondary: #CBD5E1;
+        --color-text-muted: #94A3B8;
+        --color-text-inverse: #0F172A;
+
+        /* Brand / Action Colors */
+        --color-primary: #3B82F6;
+        --color-primary-hover: #60A5FA;
+        --color-primary-active: #93C5FD;
+        --color-primary-light: rgba(59, 130, 246, 0.15);
+        --color-accent: #38BDF8;
+
+        /* Semantic Colors */
+        --color-success: #22C55E;
+        --color-warning: #FBBF24;
+        --color-error: #EF4444;
+        --color-info: #38BDF8;
+
+        /* Chart Colors (lighter for dark mode) */
+        --chart-blue: #60A5FA;
+        --chart-green: #4ADE80;
+        --chart-amber: #FBBF24;
+        --chart-red: #F87171;
+        --chart-purple: #A78BFA;
+        --chart-cyan: #22D3EE;
+
+        /* Shadows */
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+        --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
+        --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
+        --shadow-dropdown: 0 4px 12px rgba(0, 0, 0, 0.4);
+        --shadow-overlay: rgba(0, 0, 0, 0.6);
+
+        /* View accent colors */
+        --view-1-accent: #3B82F6;
+        --view-2-accent: #A78BFA;
+        --view-3-accent: #F87171;
+    }
+}
+
+/* ========== BASE STYLES ========== */
 body {
-    background-color: #f9f9f9;
-    color: #333333;
-    font-family: "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
     font-size: 15px;
-    margin: 0px;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
 }
 
-/* ========== SCREEN 1: Problem Locator Layout ========== */
-.screen-1 {
-    width: 100%;
-    min-height: 50vh;
-    padding-bottom: 20px;
+/* ========== CONTAINER ========== */
+.container {
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: 0;
 }
 
-.screen-1-layout {
+/* ========== DASHBOARD LAYOUT (Sidebar + Main) ========== */
+.dashboard-layout {
     display: flex;
     flex-direction: row;
     gap: 20px;
-    padding: 0 20px;
+    padding: 20px;
+    min-height: 100vh;
 }
 
-/* Sidebar */
+/* ========== LEFT SIDEBAR ========== */
 .sidebar {
     flex: 0 0 280px;
+    background-color: var(--color-surface);
+    border-radius: 12px;
     padding: 20px;
-    display: flex;
-    flex-direction: column;
-    background-color: #fff;
-    border-radius: 0.675rem;
-    margin-top: 20px;
-    max-height: calc(100vh - 40px);
+    height: calc(100vh - 40px);
     overflow-y: auto;
     position: sticky;
     top: 20px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-border);
 }
 
 .sidebar-toggle {
     display: none;
     width: 100%;
     padding: 12px;
-    background: #3498db;
-    color: white;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
     border: none;
     border-radius: 8px;
     font-size: 16px;
     cursor: pointer;
     margin-bottom: 10px;
+    transition: background-color 0.2s;
+}
+
+.sidebar-toggle:hover {
+    background: var(--color-primary-hover);
 }
 
 .sidebar-content {
     display: block;
 }
 
-/* Main content area for heatmap */
+/* Sidebar sections */
+#description-card {
+    margin-bottom: 20px;
+}
+
+#description-card h5 {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    margin: 0 0 10px 0;
+}
+
+#intro {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+#control-card {
+    font-size: 13px;
+}
+
+#control-card label {
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+#control-card h6 {
+    margin: 15px 0 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+/* ========== ACCORDION (Native details/summary) ========== */
+.accordion-section {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: visible;
+    background: var(--color-surface);
+}
+
+.accordion-section summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--color-surface-alt);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+    list-style: none;
+}
+
+.accordion-section summary::-webkit-details-marker {
+    display: none;
+}
+
+.accordion-section summary::after {
+    content: "▼";
+    font-size: 10px;
+    color: var(--color-text-muted);
+    transition: transform 0.2s;
+}
+
+.accordion-section[open] summary::after {
+    transform: rotate(0deg);
+}
+
+.accordion-section:not([open]) summary::after {
+    transform: rotate(-90deg);
+}
+
+.accordion-section summary:hover {
+    background: var(--color-border);
+}
+
+.accordion-content {
+    padding: 12px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+}
+
+/* ========== MAIN CONTENT AREA ========== */
 .main-content {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-.heatmap-card {
-    border: 2px solid #3498db;
-}
-
-/* ========== SCREEN 2 Placeholder ========== */
-.screen-2-placeholder {
+/* ========== VIEW SECTIONS ========== */
+.view-section {
     width: 100%;
+}
+
+.view-header {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.view-header h5 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+/* ========== GRAPH CARDS ========== */
+.graph_card {
+    background-color: var(--color-surface);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-border);
+}
+
+.graph_card h6 {
+    margin: 0 0 8px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+/* View 1 - Problem Locator */
+.view-1 .graph_card {
+    border: 2px solid var(--view-1-accent);
+    border-left: 4px solid var(--view-1-accent);
+}
+
+/* View 2 - Diagnostic Decomposition */
+.view-2 .graph_card {
+    border-left: 4px solid var(--view-2-accent);
+}
+
+/* View 3 - Impact Validation */
+.view-3 .graph_card {
+    border-left: 4px solid var(--view-3-accent);
+}
+
+/* ========== NAVIGATION STRIP ========== */
+.nav-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.nav-strip-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.nav-strip-left .back-link {
+    color: var(--color-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+    font-weight: 500;
+}
+
+.nav-strip-left .back-link:hover {
+    background: var(--color-primary-light);
+}
+
+.nav-strip-left .separator {
+    color: var(--color-text-muted);
+    margin: 0 4px;
+}
+
+.nav-strip-left .selection-info {
+    color: var(--color-text-primary);
+    font-weight: 600;
+}
+
+.nav-strip-right {
+    display: flex;
+    gap: 8px;
+}
+
+/* ========== BUTTONS ========== */
+/* Primary Button */
+.btn-primary {
+    padding: 8px 16px;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+    background: var(--color-primary-hover);
+}
+
+.btn-primary:active {
+    background: var(--color-primary-active);
+}
+
+.btn-primary:disabled {
+    background: var(--color-disabled);
+    cursor: not-allowed;
+}
+
+/* Secondary Button */
+.btn-secondary {
+    padding: 8px 16px;
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: var(--color-surface-alt);
+    border-color: var(--color-text-muted);
+}
+
+/* Destructive / Clear Button */
+.clear-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--color-error);
+    background: var(--color-surface);
+    color: var(--color-error);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.clear-btn:hover {
+    background: var(--color-error);
+    color: var(--color-text-inverse);
+}
+
+/* ========== FORMS & INPUTS ========== */
+input, select, textarea {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--color-text-primary);
+    font-size: 13px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+input::placeholder, textarea::placeholder {
+    color: var(--color-text-muted);
+}
+
+input:disabled, select:disabled, textarea:disabled {
+    background: var(--color-disabled);
+    cursor: not-allowed;
+}
+
+/* Dash Dropdown overrides */
+.Select-control {
+    background-color: var(--color-surface) !important;
+    border-color: var(--color-border) !important;
+}
+
+.Select-menu-outer {
+    background-color: var(--color-surface) !important;
+    border-color: var(--color-border) !important;
+    box-shadow: var(--shadow-dropdown) !important;
+    max-height: 200px !important;
+    overflow-y: auto !important;
+}
+
+.Select-menu {
+    max-height: 200px !important;
+    overflow-y: auto !important;
+}
+
+.Select-option {
+    background-color: var(--color-surface) !important;
+    color: var(--color-text-primary) !important;
+}
+
+.Select-option:hover,
+.Select-option.is-focused {
+    background-color: var(--color-primary-light) !important;
+}
+
+.Select-option.is-selected {
+    background-color: var(--color-primary-light) !important;
+    color: var(--color-primary) !important;
+}
+
+/* Dash Radio/Checkbox */
+.RadioItems label,
+.Checklist label {
+    color: var(--color-text-primary);
+}
+
+/* ========== PLACEHOLDER SECTION ========== */
+.placeholder-section {
+    background: linear-gradient(180deg, var(--color-surface-alt) 0%, var(--color-border) 100%);
+    border-radius: 12px;
     padding: 60px 20px;
     text-align: center;
-    background: linear-gradient(180deg, #f4f4f4 0%, #e8e8e8 100%);
-    border-top: 1px solid #ddd;
+    border: 2px dashed var(--color-border);
 }
 
 .placeholder-content {
@@ -76,156 +505,144 @@ body {
     margin: 0 auto;
 }
 
-/* ========== SCREEN 2: Diagnostic Workspace ========== */
-.screen-2 {
-    width: 100%;
-    padding: 0 20px 40px;
-    background-color: #f4f4f4;
-    border-top: 3px solid #3498db;
+.placeholder-content h5 {
+    color: var(--color-text-primary);
 }
 
-/* Sticky header for SCREEN 2 */
-.screen-2-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
+.placeholder-content p {
+    color: var(--color-text-secondary);
+}
+
+.placeholder-icon {
+    animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+.preview-cards {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 20px;
-    background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
-    color: white;
-    margin: 0 -20px 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-
-.header-right {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-}
-
-.nav-button {
-    padding: 8px 16px;
-    border: 1px solid rgba(255,255,255,0.3);
-    background: rgba(255,255,255,0.1);
-    color: white;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s ease;
-}
-
-.nav-button:hover {
-    background: rgba(255,255,255,0.2);
-    border-color: rgba(255,255,255,0.5);
-}
-
-.clear-button {
-    background: rgba(231, 76, 60, 0.8);
-    border-color: rgba(231, 76, 60, 0.5);
-}
-
-.clear-button:hover {
-    background: rgba(231, 76, 60, 1);
-}
-
-/* Section 2A: Diagnostic Timeline - Full Width */
-.section-2a {
-    width: 100%;
-    margin-bottom: 20px;
-}
-
-/* Section 2B: Split View Container */
-.section-2b {
-    width: 100%;
-    margin-bottom: 20px;
-}
-
-.split-view-container {
-    display: flex;
-    flex-direction: row;
     gap: 20px;
+    justify-content: center;
+    margin-top: 24px;
+    flex-wrap: wrap;
 }
 
-.impact-panel {
-    flex: 1 1 50%;
-    min-width: 0;
+.preview-cards > div {
+    background: var(--color-surface);
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-border);
 }
 
-.pressure-panel {
-    flex: 1 1 50%;
-    min-width: 0;
+.preview-cards p {
+    color: var(--color-text-secondary);
 }
 
-/* Section 2C: Case Explanation - Full Width */
-.section-2c {
-    width: 100%;
-}
-
-/* ========== Legacy Support ========== */
-#left-column {
-    padding: 0;
+/* ========== WORKFLOW MINI INDICATOR ========== */
+.workflow-mini {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 4px;
 }
 
-#right-column {
-    background-color: transparent;
-    padding: 0;
+.workflow-step-mini {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--color-surface-alt);
+    color: var(--color-text-secondary);
+    font-size: 10px;
 }
 
+/* ========== TYPOGRAPHY ========== */
 h5 {
-    color: #2c8cff;
-    font-weight: 300;
+    color: var(--color-text-primary);
+    font-weight: 600;
 }
 
-#intro {
-    margin: 20px 0px;
-    text-align: justify;
+h6 {
+    color: var(--color-text-primary);
 }
 
-#control-card label {
-    font-weight: bold;
+hr {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 15px 0;
 }
 
-.graph_card {
-    background-color: white;
-    border-radius: 0.675rem;
-    padding: 1rem;
-    margin: auto;
-    margin-top: 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+/* Links */
+a {
+    color: var(--color-primary);
+    text-decoration: none;
 }
 
-.graph_card h6 {
-    margin:  0 7px;
-    padding-bottom: 7px;
-    border-bottom:  1px solid #ccc;
+a:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
 }
 
-.container {
-    max-width: 2000px;
+/* ========== STATUS COLORS ========== */
+.status-success {
+    color: var(--color-success);
 }
 
-/* ========== RESPONSIVE: < 1200px ========== */
-@media (max-width: 1199px) {
-    .split-view-container {
-        flex-direction: column;
+.status-warning {
+    color: var(--color-warning);
+}
+
+.status-error {
+    color: var(--color-error);
+}
+
+.status-info {
+    color: var(--color-info);
+}
+
+
+
+/* Clear selection button */
+#clear-selection-btn {
+    background-color: "#FFFFFF";
+    border-color: "#FFFFFF";
+    border: "none";
+}
+
+
+/* ========== SCROLL BEHAVIOR ========== */
+html {
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
     }
     
-    .impact-panel,
-    .pressure-panel {
-        flex: 1 1 100%;
-        width: 100%;
+    .placeholder-icon {
+        animation: none;
     }
 }
 
-/* ========== RESPONSIVE: < 900px (Mobile/Tablet) ========== */
+/* ========== RESPONSIVE: Tablet (< 1200px) ========== */
+@media (max-width: 1199px) {
+    .dashboard-layout {
+        padding: 15px;
+        gap: 15px;
+    }
+    
+    .sidebar {
+        flex: 0 0 260px;
+    }
+}
+
+/* ========== RESPONSIVE: Mobile (< 900px) ========== */
 @media (max-width: 899px) {
-    .screen-1-layout {
+    .dashboard-layout {
         flex-direction: column;
-        padding: 0 10px;
+        padding: 10px;
     }
     
     .sidebar {
@@ -233,8 +650,8 @@ h5 {
         width: 100%;
         position: relative;
         top: 0;
+        height: auto;
         max-height: none;
-        margin-top: 10px;
     }
     
     .sidebar-toggle {
@@ -254,125 +671,54 @@ h5 {
         width: 100%;
     }
     
-    .screen-2 {
-        padding: 0 10px 20px;
-    }
-    
-    .screen-2-header {
+    .nav-strip {
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
         text-align: center;
-        margin: 0 -10px 20px;
-        padding: 12px 10px;
     }
     
-    .header-left {
-        align-items: center;
-    }
-    
-    .header-title-row {
-        flex-direction: column;
-        gap: 5px;
-    }
-    
-    .header-title-row span:last-child {
-        margin-left: 0 !important;
-    }
-    
-    .workflow-indicator {
+    .nav-strip-left {
         flex-wrap: wrap;
         justify-content: center;
     }
     
-    .header-right {
+    .nav-strip-right {
         width: 100%;
         justify-content: center;
     }
     
-    .nav-button {
-        flex: 1;
-        text-align: center;
+    .placeholder-section {
+        padding: 40px 15px;
     }
     
-    .screen-2-placeholder {
-        padding: 40px 10px;
+    .preview-cards {
+        gap: 12px;
     }
     
-    .placeholder-workflow-preview > div {
-        gap: 12px !important;
+    .preview-cards > div {
+        padding: 12px 16px;
     }
 }
 
-/* ========== Workflow Indicator in Header ========== */
-.header-left {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-}
-
-.header-title-row {
-    display: flex;
-    align-items: center;
-}
-
-.workflow-indicator {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    opacity: 0.9;
-}
-
-.workflow-step {
-    padding: 2px 8px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.15);
-    color: rgba(255,255,255,0.7);
-}
-
-.workflow-step.completed {
-    background: rgba(39, 174, 96, 0.4);
-    color: #2ecc71;
-}
-
-.workflow-step.active {
-    background: rgba(255,255,255,0.25);
-    color: white;
-    font-weight: bold;
-}
-
-.workflow-arrow {
-    color: rgba(255,255,255,0.4);
-    font-size: 10px;
-}
-
-/* ========== Placeholder Enhancements ========== */
-.placeholder-icon-pulse {
-    animation: pulse-subtle 2s ease-in-out infinite;
-}
-
-@keyframes pulse-subtle {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.8; }
-}
-
-.placeholder-workflow-preview {
-    max-width: 450px;
-    margin: 0 auto;
-}
-
-/* ========== Smooth scroll behavior ========== */
-html {
-    scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    html {
-        scroll-behavior: auto;
+/* ========== RESPONSIVE: Small Mobile (< 600px) ========== */
+@media (max-width: 599px) {
+    .dashboard-layout {
+        padding: 8px;
     }
     
-    .placeholder-icon-pulse {
-        animation: none;
+    .graph_card {
+        padding: 12px;
+    }
+    
+    .view-header h5 {
+        font-size: 14px;
+    }
+    
+    .placeholder-content h5 {
+        font-size: 16px;
+    }
+    
+    .placeholder-content p {
+        font-size: 12px;
     }
 }

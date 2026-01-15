@@ -1,40 +1,60 @@
 # jbi100_app/main.py
+"""
+BedFlow Diagnostic Dashboard - Main Application
+================================================
+Implements the three-view diagnostic architecture:
+1. VIEW 1 - Problem Locator (Heatmap) - Always visible
+2. VIEW 2 - Diagnostic Decomposition (Multi-factor Timeline)
+3. VIEW 3 - Impact Validation (Morale & Satisfaction)
+
+Layout follows the specification:
+- Left Control Panel (sidebar)
+- Main content area with three coordinated views
+
+Workflow: Locate → Diagnose → Validate → Explain
+"""
+
 from dash import Dash, html, dcc, Input, Output, State
 import pandas as pd
 
 from .views.menu import make_menu_layout
 from .views.panels import (
-    make_heatmap_interactive,
-    make_event_timeline,
-    make_human_cost_timeline,
-    make_scatter,
-    make_capacity_breakdown,
+    make_heatmap_locator,
+    make_diagnostic_timeline,
+    make_impact_validation,
 )
 from .data import load_hospitalbeds
 
 
 def create_app():
+    """Create and configure the Dash application."""
     app = Dash(__name__)
     app.title = "BedFlow Diagnostic Dashboard"
 
-    # DATA (UPDATED: now returns 3 values)
+    # ========== DATA LOADING ==========
     df, cols, extras = load_hospitalbeds("data")
 
-    # service values as clean strings
+    # Extract metadata
     services = sorted(df[cols.service].dropna().astype(str).unique().tolist())
-
-    # event values
     events = []
     if cols.event and cols.event in df.columns:
         events = sorted(df[cols.event].dropna().astype(str).unique().tolist())
-
-    # max week for slider
     max_week = int(df[cols.week].max()) if cols.week else 52
 
+    # Detect morale and satisfaction columns
+    morale_col = None
+    satisfaction_col = None
+    for col in df.columns:
+        if "morale" in col.lower():
+            morale_col = col
+        if "satisfaction" in col.lower():
+            satisfaction_col = col
+
+    # ========== LAYOUT ==========
     app.layout = html.Div(
         className="container",
         children=[
-            # Global state store for all interactive state
+            # ========== GLOBAL STATE STORE ==========
             dcc.Store(
                 id="global-state",
                 data={
@@ -42,399 +62,181 @@ def create_app():
                     "selected_week": None,
                     "diagnostic_focus": "refusal_rate",
                     "visible_events": ["flu", "strike", "donation"],
-                    "comparison_mode": "single",
+                    "service_filter": "__ALL__",
                 },
             ),
-            # ========== SCREEN 1: PROBLEM LOCATOR (Always Visible) ==========
+            # ========== MAIN LAYOUT ==========
             html.Div(
-                id="screen-1",
-                className="screen-1",
+                className="dashboard-layout",
                 children=[
+                    # ========== LEFT SIDEBAR (Control Panel) ==========
                     html.Div(
-                        className="screen-1-layout",
+                        className="sidebar",
+                        id="left-column",
                         children=[
-                            # LEFT SIDEBAR
-                            html.Div(
-                                className="sidebar",
-                                id="left-column",
-                                children=[
-                                    # Mobile drawer toggle (hidden on desktop)
-                                    html.Button(
-                                        "☰ Controls",
-                                        id="sidebar-toggle",
-                                        className="sidebar-toggle",
-                                    ),
-                                    html.Div(
-                                        id="sidebar-content",
-                                        className="sidebar-content",
-                                        children=make_menu_layout(
-                                            services, events, max_week
-                                        ),
-                                    ),
-                                ],
+                            # Mobile toggle button
+                            html.Button(
+                                "☰ Controls",
+                                id="sidebar-toggle",
+                                className="sidebar-toggle",
                             ),
-                            # MAIN HEATMAP AREA
                             html.Div(
-                                className="main-content",
-                                id="right-column",
+                                id="sidebar-content",
+                                className="sidebar-content",
+                                children=make_menu_layout(services, events, max_week),
+                            ),
+                        ],
+                    ),
+                    # ========== MAIN CONTENT AREA ==========
+                    html.Div(
+                        className="main-content",
+                        id="right-column",
+                        children=[
+                            # ========== VIEW 1: Problem Locator (Heatmap) ==========
+                            html.Div(
+                                className="view-section view-1",
+                                id="view-1-section",
                                 children=[
                                     html.Div(
-                                        className="graph_card heatmap-card",
+                                        className="graph_card",
                                         children=[
-                                            html.H6(
-                                                "🔍 Problem Locator — Service × Week",
-                                                style={"color": "#2c3e50"},
+                                            html.Div(
+                                                className="view-header",
+                                                children=[
+                                                    html.H5(
+                                                        "Problem Locator",
+                                                        style={
+                                                            "color": "#2c3e50",
+                                                            "margin": "0",
+                                                        },
+                                                    ),
+                                                    html.P(
+                                                        "Where and when do abnormal refusal rates occur?",
+                                                        style={
+                                                            "fontSize": "12px",
+                                                            "color": "#666",
+                                                            "margin": "4px 0 0 0",
+                                                        },
+                                                    ),
+                                                ],
                                             ),
                                             html.P(
-                                                "Click a cell to begin diagnosis →",
+                                                "Click a cell to select service-week for diagnosis →",
                                                 style={
-                                                    "fontSize": "12px",
+                                                    "fontSize": "11px",
                                                     "color": "#888",
                                                     "marginBottom": "8px",
+                                                    "fontStyle": "italic",
                                                 },
                                             ),
                                             dcc.Graph(
                                                 id="heatmap",
-                                                style={"height": "350px"},
-                                                config={"displayModeBar": True},
-                                            ),
-                                        ],
-                                    ),
-                                ],
-                            ),
-                        ],
-                    ),
-                ],
-            ),
-            # ========== PLACEHOLDER: Instructional message (shown when no selection) ==========
-            html.Div(
-                id="screen-2-placeholder",
-                className="screen-2-placeholder",
-                children=[
-                    html.Div(
-                        className="placeholder-content",
-                        children=[
-                            html.Div(
-                                className="placeholder-icon-pulse",
-                                children=[html.Span("🔍", style={"fontSize": "48px"})],
-                            ),
-                            html.H5(
-                                "Select a high-value cell to investigate",
-                                style={
-                                    "color": "#2c3e50",
-                                    "marginTop": "16px",
-                                    "fontWeight": "600",
-                                },
-                            ),
-                            html.P(
-                                "Click a dark red cell in the heatmap above — these indicate potential problem areas requiring diagnosis.",
-                                style={
-                                    "color": "#666",
-                                    "fontSize": "14px",
-                                    "maxWidth": "400px",
-                                    "margin": "8px auto",
-                                },
-                            ),
-                            html.Div(
-                                className="placeholder-workflow-preview",
-                                style={
-                                    "marginTop": "24px",
-                                    "padding": "16px",
-                                    "backgroundColor": "#fff",
-                                    "borderRadius": "8px",
-                                    "boxShadow": "0 2px 8px rgba(0,0,0,0.1)",
-                                },
-                                children=[
-                                    html.P(
-                                        "What you'll discover:",
-                                        style={
-                                            "fontWeight": "bold",
-                                            "fontSize": "13px",
-                                            "color": "#2c3e50",
-                                            "marginBottom": "12px",
-                                        },
-                                    ),
-                                    html.Div(
-                                        style={
-                                            "display": "flex",
-                                            "justifyContent": "center",
-                                            "gap": "20px",
-                                            "flexWrap": "wrap",
-                                        },
-                                        children=[
-                                            html.Div(
-                                                [
-                                                    html.Span(
-                                                        "📊", style={"fontSize": "24px"}
-                                                    ),
-                                                    html.P(
-                                                        "Timeline",
-                                                        style={
-                                                            "fontSize": "11px",
-                                                            "color": "#666",
-                                                            "margin": "4px 0 0",
-                                                        },
-                                                    ),
-                                                    html.P(
-                                                        "What happened?",
-                                                        style={
-                                                            "fontSize": "10px",
-                                                            "color": "#999",
-                                                            "margin": "0",
-                                                        },
-                                                    ),
-                                                ],
-                                                style={"textAlign": "center"},
-                                            ),
-                                            html.Div(
-                                                [
-                                                    html.Span(
-                                                        "💔", style={"fontSize": "24px"}
-                                                    ),
-                                                    html.P(
-                                                        "Impact",
-                                                        style={
-                                                            "fontSize": "11px",
-                                                            "color": "#666",
-                                                            "margin": "4px 0 0",
-                                                        },
-                                                    ),
-                                                    html.P(
-                                                        "What was the cost?",
-                                                        style={
-                                                            "fontSize": "10px",
-                                                            "color": "#999",
-                                                            "margin": "0",
-                                                        },
-                                                    ),
-                                                ],
-                                                style={"textAlign": "center"},
-                                            ),
-                                            html.Div(
-                                                [
-                                                    html.Span(
-                                                        "⚠️", style={"fontSize": "24px"}
-                                                    ),
-                                                    html.P(
-                                                        "Pressure",
-                                                        style={
-                                                            "fontSize": "11px",
-                                                            "color": "#666",
-                                                            "margin": "4px 0 0",
-                                                        },
-                                                    ),
-                                                    html.P(
-                                                        "How severe?",
-                                                        style={
-                                                            "fontSize": "10px",
-                                                            "color": "#999",
-                                                            "margin": "0",
-                                                        },
-                                                    ),
-                                                ],
-                                                style={"textAlign": "center"},
-                                            ),
-                                            html.Div(
-                                                [
-                                                    html.Span(
-                                                        "📋", style={"fontSize": "24px"}
-                                                    ),
-                                                    html.P(
-                                                        "Explanation",
-                                                        style={
-                                                            "fontSize": "11px",
-                                                            "color": "#666",
-                                                            "margin": "4px 0 0",
-                                                        },
-                                                    ),
-                                                    html.P(
-                                                        "Summary",
-                                                        style={
-                                                            "fontSize": "10px",
-                                                            "color": "#999",
-                                                            "margin": "0",
-                                                        },
-                                                    ),
-                                                ],
-                                                style={"textAlign": "center"},
-                                            ),
-                                        ],
-                                    ),
-                                ],
-                            ),
-                        ],
-                    ),
-                ],
-            ),
-            # ========== SCREEN 2: DIAGNOSTIC WORKSPACE (Hidden until selection) ==========
-            html.Div(
-                id="screen-2",
-                className="screen-2",
-                style={"display": "none"},
-                children=[
-                    # STICKY MINI-HEADER with navigation
-                    html.Div(
-                        id="screen-2-header",
-                        className="screen-2-header",
-                        children=[
-                            html.Div(
-                                className="header-left",
-                                children=[
-                                    html.Div(
-                                        className="header-title-row",
-                                        children=[
-                                            html.Span(
-                                                "📊 Diagnostic Workspace",
-                                                style={
-                                                    "fontWeight": "bold",
-                                                    "fontSize": "16px",
-                                                },
-                                            ),
-                                            html.Span(
-                                                id="header-selection-display",
-                                                style={
-                                                    "marginLeft": "16px",
-                                                    "color": "#27ae60",
+                                                style={"height": "320px"},
+                                                config={
+                                                    "displayModeBar": True,
+                                                    "displaylogo": False,
                                                 },
                                             ),
                                         ],
                                     ),
-                                    # Workflow step indicator
+                                ],
+                            ),
+                            # ========== PLACEHOLDER (shown when no selection) ==========
+                            html.Div(
+                                id="placeholder-section",
+                                className="placeholder-section",
+                                children=[
                                     html.Div(
-                                        className="workflow-indicator",
-                                        children=[
-                                            html.Span(
-                                                "✓ Locate",
-                                                className="workflow-step completed",
-                                            ),
-                                            html.Span("→", className="workflow-arrow"),
-                                            html.Span(
-                                                "Timeline",
-                                                className="workflow-step active",
-                                                id="step-timeline",
-                                            ),
-                                            html.Span("→", className="workflow-arrow"),
-                                            html.Span(
-                                                "Impact",
-                                                className="workflow-step",
-                                                id="step-impact",
-                                            ),
-                                            html.Span("→", className="workflow-arrow"),
-                                            html.Span(
-                                                "Explain",
-                                                className="workflow-step",
-                                                id="step-explain",
-                                            ),
-                                        ],
-                                    ),
-                                ],
-                            ),
-                            html.Div(
-                                className="header-right",
-                                children=[
-                                    html.Button(
-                                        "↑ Back to Locator",
-                                        id="back-to-locator-btn",
-                                        className="nav-button",
-                                    ),
-                                    html.Button(
-                                        "✕ Clear Selection",
-                                        id="header-clear-btn",
-                                        className="nav-button clear-button",
-                                    ),
-                                ],
-                            ),
-                        ],
-                    ),
-                    # ========== SECTION 2A: Diagnostic Timeline (FULL WIDTH) ==========
-                    html.Div(
-                        className="section-2a",
-                        children=[
-                            html.Div(
-                                className="graph_card",
-                                id="diagnostic-timeline-card",
-                                children=[
-                                    html.H6(
-                                        "2A️⃣ Diagnostic Timeline — Events & Constraints",
-                                        style={"color": "#2c3e50"},
-                                    ),
-                                    html.P(
-                                        "What happened operationally, and when?",
-                                        style={
-                                            "fontSize": "12px",
-                                            "color": "#888",
-                                            "margin": "0 7px 8px",
-                                        },
-                                    ),
-                                    dcc.Graph(
-                                        id="event-timeline",
-                                        style={"height": "500px"},
-                                    ),
-                                ],
-                            ),
-                        ],
-                    ),
-                    # ========== SECTION 2B: Impact & Context (SPLIT VIEW) ==========
-                    html.Div(
-                        className="section-2b",
-                        children=[
-                            html.Div(
-                                className="split-view-container",
-                                children=[
-                                    # LEFT: Impact Validation (60%)
-                                    html.Div(
-                                        className="impact-panel",
+                                        className="placeholder-content",
                                         children=[
                                             html.Div(
-                                                className="graph_card",
-                                                id="impact-validation-card",
+                                                className="placeholder-icon",
                                                 children=[
-                                                    html.H6(
-                                                        "2B-L️⃣ Impact Validation — Morale & Satisfaction",
-                                                        style={"color": "#2c3e50"},
-                                                    ),
-                                                    html.P(
-                                                        "Validate consequences of the problem",
-                                                        style={
-                                                            "fontSize": "12px",
-                                                            "color": "#888",
-                                                            "margin": "0 7px 8px",
-                                                        },
-                                                    ),
-                                                    dcc.Graph(
-                                                        id="human-cost-timeline",
-                                                        style={"height": "350px"},
+                                                    html.Span(
+                                                        "🔍", style={"fontSize": "48px"}
                                                     ),
                                                 ],
                                             ),
-                                        ],
-                                    ),
-                                    # RIGHT: Pressure Analysis (40%)
-                                    html.Div(
-                                        className="pressure-panel",
-                                        children=[
+                                            html.H5(
+                                                "Select a cell to investigate",
+                                                style={
+                                                    "color": "#2c3e50",
+                                                    "marginTop": "16px",
+                                                    "fontWeight": "600",
+                                                },
+                                            ),
+                                            html.P(
+                                                "Click a dark red cell in the heatmap above — "
+                                                "these indicate potential problem areas requiring diagnosis.",
+                                                style={
+                                                    "color": "#666",
+                                                    "fontSize": "13px",
+                                                    "maxWidth": "400px",
+                                                    "margin": "8px auto",
+                                                },
+                                            ),
                                             html.Div(
-                                                className="graph_card",
-                                                id="pressure-analysis-card",
+                                                className="preview-cards",
+                                                style={
+                                                    "display": "flex",
+                                                    "gap": "20px",
+                                                    "justifyContent": "center",
+                                                    "marginTop": "24px",
+                                                    "flexWrap": "wrap",
+                                                },
                                                 children=[
-                                                    html.H6(
-                                                        "2B-R️⃣ Pressure Analysis — Staffing vs Utilization",
-                                                        style={"color": "#2c3e50"},
-                                                    ),
-                                                    html.P(
-                                                        "Assess severity relative to baseline",
+                                                    html.Div(
+                                                        [
+                                                            html.Span(
+                                                                "📊",
+                                                                style={
+                                                                    "fontSize": "28px"
+                                                                },
+                                                            ),
+                                                            html.P(
+                                                                "Diagnose",
+                                                                style={
+                                                                    "fontSize": "12px",
+                                                                    "color": "#666",
+                                                                    "margin": "4px 0 0",
+                                                                },
+                                                            ),
+                                                            html.P(
+                                                                "Why did this happen?",
+                                                                style={
+                                                                    "fontSize": "10px",
+                                                                    "color": "#999",
+                                                                    "margin": "0",
+                                                                },
+                                                            ),
+                                                        ],
                                                         style={
-                                                            "fontSize": "12px",
-                                                            "color": "#888",
-                                                            "margin": "0 7px 8px",
+                                                            "textAlign": "center",
+                                                            "padding": "12px",
                                                         },
                                                     ),
-                                                    dcc.Graph(
-                                                        id="scatter",
-                                                        style={"height": "350px"},
-                                                        config={
-                                                            "displayModeBar": "hover",
-                                                            "displaylogo": False,
+                                                    html.Div(
+                                                        [
+                                                            html.P(
+                                                                "Validate",
+                                                                style={
+                                                                    "fontSize": "12px",
+                                                                    "color": "#666",
+                                                                    "margin": "4px 0 0",
+                                                                },
+                                                            ),
+                                                            html.P(
+                                                                "What was the impact?",
+                                                                style={
+                                                                    "fontSize": "10px",
+                                                                    "color": "#999",
+                                                                    "margin": "0",
+                                                                },
+                                                            ),
+                                                        ],
+                                                        style={
+                                                            "textAlign": "center",
+                                                            "padding": "12px",
                                                         },
                                                     ),
                                                 ],
@@ -443,31 +245,85 @@ def create_app():
                                     ),
                                 ],
                             ),
-                        ],
-                    ),
-                    # ========== SECTION 2C: Case Explanation (FULL WIDTH) ==========
-                    html.Div(
-                        className="section-2c",
-                        children=[
+                            # ========== VIEW 2: Diagnostic Decomposition ==========
                             html.Div(
-                                className="graph_card",
-                                id="case-explanation-card",
+                                className="view-section view-2",
+                                id="view-2-section",
+                                style={"display": "none"},
                                 children=[
-                                    html.H6(
-                                        "2C️⃣ Case Explanation — Selected Service-Week",
-                                        style={"color": "#2c3e50"},
+                                    html.Div(
+                                        className="graph_card",
+                                        children=[
+                                            html.Div(
+                                                className="view-header",
+                                                children=[
+                                                    html.H5(
+                                                        "Diagnostic Decomposition",
+                                                        style={
+                                                            "color": "#2c3e50",
+                                                            "margin": "0",
+                                                        },
+                                                    ),
+                                                    html.P(
+                                                        "Why did refusals increase here? (Multi-factor causal analysis)",
+                                                        style={
+                                                            "fontSize": "12px",
+                                                            "color": "#666",
+                                                            "margin": "4px 0 0 0",
+                                                        },
+                                                    ),
+                                                ],
+                                            ),
+                                            dcc.Graph(
+                                                id="diagnostic-timeline",
+                                                style={"height": "650px"},
+                                                config={
+                                                    "displayModeBar": True,
+                                                    "displaylogo": False,
+                                                },
+                                            ),
+                                        ],
                                     ),
-                                    html.P(
-                                        "How do I explain this case to someone else?",
-                                        style={
-                                            "fontSize": "12px",
-                                            "color": "#888",
-                                            "margin": "0 7px 8px",
-                                        },
-                                    ),
-                                    dcc.Graph(
-                                        id="capacity-breakdown",
-                                        style={"height": "300px"},
+                                ],
+                            ),
+                            # ========== VIEW 3: Impact Validation ==========
+                            html.Div(
+                                className="view-section view-3",
+                                id="view-3-section",
+                                style={"display": "none"},
+                                children=[
+                                    html.Div(
+                                        className="graph_card",
+                                        children=[
+                                            html.Div(
+                                                className="view-header",
+                                                children=[
+                                                    html.H5(
+                                                        "Impact Validation",
+                                                        style={
+                                                            "color": "#2c3e50",
+                                                            "margin": "0",
+                                                        },
+                                                    ),
+                                                    html.P(
+                                                        "Did this operational failure have consequences?",
+                                                        style={
+                                                            "fontSize": "12px",
+                                                            "color": "#666",
+                                                            "margin": "4px 0 0 0",
+                                                        },
+                                                    ),
+                                                ],
+                                            ),
+                                            dcc.Graph(
+                                                id="impact-validation",
+                                                style={"height": "320px"},
+                                                config={
+                                                    "displayModeBar": True,
+                                                    "displaylogo": False,
+                                                },
+                                            ),
+                                        ],
                                     ),
                                 ],
                             ),
@@ -478,42 +334,38 @@ def create_app():
         ],
     )
 
+    # ========== HELPER FUNCTIONS ==========
     def metric_series(dff: pd.DataFrame, metric: str) -> pd.Series:
-        if metric == "requests" and getattr(cols, "requests", None):
-            return dff[cols.requests]
-        if metric == "admissions" and getattr(cols, "admissions", None):
-            return dff[cols.admissions]
-        if metric == "refusals" and getattr(cols, "refusals", None):
-            return dff[cols.refusals]
-        if metric == "beds" and getattr(cols, "beds", None):
-            return dff[cols.beds]
-        if metric == "staff" and getattr(cols, "staff", None):
-            return dff[cols.staff]
-        if metric == "refusal_rate" and getattr(cols, "refusal_rate", None):
+        """Get the appropriate metric series based on diagnostic focus."""
+        if metric == "refusal_rate" and cols.refusal_rate:
             return dff[cols.refusal_rate]
-        if metric == "bed_utilization" and getattr(cols, "bed_utilization", None):
+        if metric == "bed_utilization" and cols.bed_utilization:
             return dff[cols.bed_utilization]
-        if metric == "patients_per_staff" and getattr(cols, "patients_per_staff", None):
+        if metric == "patients_per_staff" and cols.patients_per_staff:
             return dff[cols.patients_per_staff]
-        if (
-            metric == "refusal_rate"
-            and getattr(cols, "requests", None)
-            and getattr(cols, "refusals", None)
-        ):
+        # Fallback to refusal_rate
+        if cols.refusal_rate:
+            return dff[cols.refusal_rate]
+        # Ultimate fallback
+        if cols.requests and cols.refusals:
             denom = dff[cols.requests].replace(0, pd.NA)
             return (dff[cols.refusals] / denom).fillna(0)
         return pd.Series([0] * len(dff))
 
-    # ========== CALLBACK: Handle heatmap click to update selection (with deselection support) ==========
+    # ========== CALLBACKS ==========
+
+    # Callback 1: Handle heatmap click, clear buttons, and service filter changes
     @app.callback(
         Output("global-state", "data"),
         Input("heatmap", "clickData"),
         Input("clear-selection-btn", "n_clicks"),
-        Input("header-clear-btn", "n_clicks"),
+        Input("service-select", "value"),
         State("global-state", "data"),
         prevent_initial_call=True,
     )
-    def update_selection(click_data, clear_clicks, header_clear_clicks, current_state):
+    def update_selection(
+        click_data, clear_clicks, service_filter, current_state
+    ):
         from dash import callback_context
 
         if not callback_context.triggered:
@@ -521,10 +373,23 @@ def create_app():
 
         triggered_id = callback_context.triggered[0]["prop_id"].split(".")[0]
 
-        # Handle clear buttons (both sidebar and header)
-        if triggered_id in ["clear-selection-btn", "header-clear-btn"]:
+        # Handle clear button
+        if triggered_id == "clear-selection-btn":
             current_state["selected_service"] = None
             current_state["selected_week"] = None
+            return current_state
+
+        # Handle service filter change (Rule A2: keep selection only if consistent)
+        if triggered_id == "service-select":
+            current_state["service_filter"] = service_filter
+            selected_service = current_state.get("selected_service")
+
+            # If a service is selected and the filter doesn't match, clear selection
+            if selected_service is not None:
+                if service_filter != "__ALL__" and service_filter != selected_service:
+                    # Clear selection because filter doesn't match
+                    current_state["selected_service"] = None
+                    current_state["selected_week"] = None
             return current_state
 
         # Handle heatmap click
@@ -551,38 +416,32 @@ def create_app():
 
         return current_state
 
-    # ========== CALLBACK: Update menu controls from global state ==========
+    # Callback 2: Sync controls with global state
     @app.callback(
         Output("diagnostic-focus", "value"),
         Output("event-visibility", "value"),
-        Output("comparison-mode", "value"),
         Input("global-state", "data"),
     )
     def sync_controls_from_state(state):
         return (
             state.get("diagnostic_focus", "refusal_rate"),
             state.get("visible_events", ["flu", "strike", "donation"]),
-            state.get("comparison_mode", "single"),
         )
 
-    # ========== CALLBACK: Update global state from menu controls ==========
+    # Callback 3: Update global state from menu controls
     @app.callback(
         Output("global-state", "data", allow_duplicate=True),
         Input("diagnostic-focus", "value"),
         Input("event-visibility", "value"),
-        Input("comparison-mode", "value"),
         State("global-state", "data"),
         prevent_initial_call=True,
     )
-    def update_state_from_controls(
-        diagnostic_focus, visible_events, comparison_mode, state
-    ):
+    def update_state_from_controls(diagnostic_focus, visible_events, state):
         state["diagnostic_focus"] = diagnostic_focus
         state["visible_events"] = visible_events or []
-        state["comparison_mode"] = comparison_mode
         return state
 
-    # ========== CALLBACK: Update selection display ==========
+    # Callback 4: Update selection display in sidebar
     @app.callback(
         Output("selection-display", "children"),
         Input("global-state", "data"),
@@ -593,101 +452,170 @@ def create_app():
 
         if service and week:
             service_display = service.replace("_", " ").title()
-            return [
-                html.Span(
-                    f"✅ {service_display}",
-                    style={"color": "#27ae60", "fontWeight": "bold"},
-                ),
-                html.Br(),
-                html.Span(f"Week {week}", style={"fontSize": "14px"}),
-            ]
+            return []
         else:
-            return [
-                html.Span("No selection", style={"color": "#e74c3c"}),
-                html.Br(),
-                html.Span(
-                    "Click a heatmap cell to begin diagnosis",
-                    style={"fontSize": "10px", "color": "#888"},
-                ),
-            ]
+            return []
 
-    # ========== CALLBACK: Layer visibility based on selection ==========
+    # Callback 5: Toggle visibility of diagnostic views
     @app.callback(
-        Output("screen-2", "style"),
-        Output("screen-2-placeholder", "style"),
+        Output("view-2-section", "style"),
+        Output("view-3-section", "style"),
+        Output("placeholder-section", "style"),
         Input("global-state", "data"),
     )
-    def update_screen_visibility(state):
+    def update_view_visibility(state):
         has_selection = state.get("selected_service") and state.get("selected_week")
 
         if has_selection:
-            # Show SCREEN 2, hide placeholder
-            return {"display": "block"}, {"display": "none"}
+            return (
+                {"display": "block"},  # Show View 2
+                {"display": "block"},  # Show View 3
+                {"display": "none"},  # Hide placeholder
+            )
         else:
-            # Hide SCREEN 2, show placeholder
-            return {"display": "none"}, {"display": "block"}
+            return (
+                {"display": "none"},  # Hide View 2
+                {"display": "none"},  # Hide View 3
+                {"display": "block"},  # Show placeholder
+            )
 
-    # ========== CALLBACK: Update header selection display ==========
+    # Callback 6: Update VIEW 1 - Heatmap
     @app.callback(
-        Output("header-selection-display", "children"),
+        Output("heatmap", "figure"),
         Input("global-state", "data"),
+        Input("week-range", "value"),
     )
-    def update_header_selection(state):
-        service = state.get("selected_service")
-        week = state.get("selected_week")
+    def update_heatmap(state, week_range):
+        service_filter = state.get("service_filter", "__ALL__")
+        diagnostic_focus = state.get("diagnostic_focus", "refusal_rate")
+        selected_week = state.get("selected_week")
+        selected_service = state.get("selected_service")
 
-        if service and week:
-            service_display = service.replace("_", " ").title()
-            return f"✅ {service_display} — Week {week}"
-        return ""
+        # Filter by week range
+        dff_heatmap = df.copy()
+        if week_range:
+            dff_heatmap = dff_heatmap[
+                (dff_heatmap[cols.week] >= week_range[0])
+                & (dff_heatmap[cols.week] <= week_range[1])
+            ]
 
-    # ========== CLIENTSIDE CALLBACK: Auto-scroll to SCREEN 2 on selection ==========
+        # Determine title based on diagnostic focus
+        focus_labels = {
+            "refusal_rate": "Refusal Rate",
+            "patients_per_staff": "Staffing Pressure",
+            "bed_utilization": "Bed Saturation",
+        }
+        hm_title = f"{focus_labels.get(diagnostic_focus, 'Metric')} by Service × Week"
+
+        return make_heatmap_locator(
+            dff_heatmap,
+            cols.week,
+            cols.service,
+            metric_series(dff_heatmap, diagnostic_focus),
+            hm_title,
+            selected_week=selected_week,
+            selected_service=selected_service,
+            service_filter=service_filter,
+        )
+
+    # Callback 8: Update VIEW 2 - Diagnostic Timeline
+    @app.callback(
+        Output("diagnostic-timeline", "figure"),
+        Input("global-state", "data"),
+        Input("week-range", "value"),
+    )
+    def update_diagnostic_timeline(state, week_range):
+        selected_service = state.get("selected_service")
+        selected_week = state.get("selected_week")
+        visible_events = state.get("visible_events", [])
+        diagnostic_focus = state.get("diagnostic_focus", "refusal_rate")
+        service_filter = state.get("service_filter", "__ALL__")
+
+        # Filter by week range
+        dff = df.copy()
+        if week_range:
+            dff = dff[
+                (dff[cols.week] >= week_range[0]) & (dff[cols.week] <= week_range[1])
+            ]
+
+        # Apply global service filter to View 2
+        if service_filter and service_filter != "__ALL__":
+            dff = dff[dff[cols.service] == service_filter]
+
+        return make_diagnostic_timeline(
+            dff,
+            week_col=cols.week,
+            service_col=cols.service,
+            requests_col=cols.requests,
+            admitted_col=cols.admissions,
+            refused_col=cols.refusals,
+            beds_col=cols.beds,
+            staff_col=cols.staff,
+            bed_utilization_col=cols.bed_utilization,
+            patients_per_staff_col=cols.patients_per_staff,
+            event_col=cols.event,
+            visible_events=visible_events,
+            selected_service=selected_service,
+            selected_week=selected_week,
+            diagnostic_focus=diagnostic_focus,
+        )
+
+    # Callback 9: Update VIEW 3 - Impact Validation
+    @app.callback(
+        Output("impact-validation", "figure"),
+        Input("global-state", "data"),
+        Input("week-range", "value"),
+    )
+    def update_impact_validation(state, week_range):
+        selected_service = state.get("selected_service")
+        selected_week = state.get("selected_week")
+        service_filter = state.get("service_filter", "__ALL__")
+
+        # Filter by week range
+        dff = df.copy()
+        if week_range:
+            dff = dff[
+                (dff[cols.week] >= week_range[0]) & (dff[cols.week] <= week_range[1])
+            ]
+
+        # Apply global service filter to View 3
+        if service_filter and service_filter != "__ALL__":
+            dff = dff[dff[cols.service] == service_filter]
+
+        return make_impact_validation(
+            dff,
+            week_col=cols.week,
+            service_col=cols.service,
+            morale_col=morale_col,
+            satisfaction_col=satisfaction_col,
+            selected_service=selected_service,
+            selected_week=selected_week,
+        )
+
+    # Clientside callback: Auto-scroll to diagnostic views on selection
     app.clientside_callback(
         """
         function(state) {
             if (state && state.selected_service && state.selected_week) {
-                // Small delay to allow DOM to update
                 setTimeout(function() {
-                    var screen2 = document.getElementById('screen-2');
-                    if (screen2) {
-                        // Check for reduced motion preference
+                    var view2 = document.getElementById('view-2-section');
+                    if (view2) {
                         var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-                        screen2.scrollIntoView({
+                        view2.scrollIntoView({
                             behavior: prefersReducedMotion ? 'auto' : 'smooth',
                             block: 'start'
                         });
                     }
-                }, 100);
+                }, 150);
             }
             return window.dash_clientside.no_update;
         }
         """,
-        Output("screen-2", "data-scroll-trigger"),
+        Output("view-2-section", "data-scroll-trigger"),
         Input("global-state", "data"),
     )
 
-    # ========== CLIENTSIDE CALLBACK: Back to Locator button ==========
-    app.clientside_callback(
-        """
-        function(n_clicks) {
-            if (n_clicks) {
-                var screen1 = document.getElementById('screen-1');
-                if (screen1) {
-                    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-                    screen1.scrollIntoView({
-                        behavior: prefersReducedMotion ? 'auto' : 'smooth',
-                        block: 'start'
-                    });
-                }
-            }
-            return window.dash_clientside.no_update;
-        }
-        """,
-        Output("screen-1", "data-scroll-trigger"),
-        Input("back-to-locator-btn", "n_clicks"),
-    )
-
-    # ========== CLIENTSIDE CALLBACK: Sidebar toggle for mobile ==========
+    # Clientside callback: Sidebar toggle for mobile
     app.clientside_callback(
         """
         function(n_clicks) {
@@ -703,206 +631,5 @@ def create_app():
         Output("sidebar-content", "data-toggle-trigger"),
         Input("sidebar-toggle", "n_clicks"),
     )
-
-    # ========== MODULAR CALLBACKS: Update visualizations independently ==========
-
-    # ========== CALLBACK 1: Update Heatmap ==========
-    @app.callback(
-        Output("heatmap", "figure"),
-        Input("global-state", "data"),
-        Input("week-range", "value"),
-    )
-    def update_heatmap(state, week_range):
-        diagnostic_focus = state.get("diagnostic_focus", "refusal_rate")
-        selected_week = state.get("selected_week")
-        selected_service = state.get("selected_service")
-
-        # Filter by week range
-        dff_heatmap = df.copy()
-        if week_range:
-            dff_heatmap = dff_heatmap[
-                (dff_heatmap[cols.week] >= week_range[0])
-                & (dff_heatmap[cols.week] <= week_range[1])
-            ]
-
-        # Use diagnostic focus to determine heatmap metric
-        focus_labels = {
-            "refusal_rate": "Refusal Rate",
-            "patients_per_staff": "Staffing Pressure",
-            "bed_utilization": "Bed Saturation",
-        }
-        hm_title = f"{focus_labels.get(diagnostic_focus, 'Metric')} by Service × Week"
-
-        return make_heatmap_interactive(
-            dff_heatmap,
-            cols.week,
-            cols.service,
-            metric_series(dff_heatmap, diagnostic_focus),
-            hm_title,
-            selected_week=selected_week,
-            selected_service=selected_service,
-        )
-
-    # ========== CALLBACK 2: Update Event Timeline ==========
-    @app.callback(
-        Output("event-timeline", "figure"),
-        Input("global-state", "data"),
-        Input("week-range", "value"),
-    )
-    def update_timeline(state, week_range):
-        selected_service = state.get("selected_service")
-        selected_week = state.get("selected_week")
-        visible_events = state.get("visible_events", [])
-        comparison_mode = state.get("comparison_mode", "single")
-
-        # Filter by week range
-        dff_timeline = df.copy()
-        if week_range:
-            dff_timeline = dff_timeline[
-                (dff_timeline[cols.week] >= week_range[0])
-                & (dff_timeline[cols.week] <= week_range[1])
-            ]
-
-        return make_event_timeline(
-            dff_timeline,
-            week_col=cols.week,
-            admitted_col=cols.admissions,
-            refused_col=cols.refusals,
-            staff_col=cols.staff,
-            event_col=cols.event,
-            title="Capacity Timeline",
-            visible_events=visible_events,
-            selected_service=selected_service,
-            selected_week=selected_week,
-            service_col=cols.service,
-            comparison_mode=comparison_mode,
-        )
-
-    # ========== CALLBACK 3: Update Human Impact Timeline ==========
-    @app.callback(
-        Output("human-cost-timeline", "figure"),
-        Input("global-state", "data"),
-        Input("week-range", "value"),
-    )
-    def update_human_impact(state, week_range):
-        selected_service = state.get("selected_service")
-        selected_week = state.get("selected_week")
-
-        # Find morale and satisfaction columns
-        morale_col = None
-        satisfaction_col = None
-        for col in df.columns:
-            if "morale" in col.lower():
-                morale_col = col
-            if "satisfaction" in col.lower():
-                satisfaction_col = col
-
-        # Filter by week range
-        dff_human = df.copy()
-        if week_range:
-            dff_human = dff_human[
-                (dff_human[cols.week] >= week_range[0])
-                & (dff_human[cols.week] <= week_range[1])
-            ]
-
-        return make_human_cost_timeline(
-            dff_human,
-            week_col=cols.week,
-            morale_col=morale_col,
-            satisfaction_col=satisfaction_col,
-            title="Human Impact",
-            selected_service=selected_service,
-            selected_week=selected_week,
-            service_col=cols.service,
-        )
-
-    # ========== CALLBACK 4: Update Scatter Plot ==========
-    @app.callback(
-        Output("scatter", "figure"),
-        Input("global-state", "data"),
-        Input("week-range", "value"),
-    )
-    def update_scatter(state, week_range):
-        diagnostic_focus = state.get("diagnostic_focus", "refusal_rate")
-        selected_service = state.get("selected_service")
-        selected_week = state.get("selected_week")
-
-        x_col = cols.patients_per_staff if cols.patients_per_staff else cols.requests
-
-        # Y-axis based on diagnostic focus
-        if diagnostic_focus == "bed_utilization":
-            y_col_scatter = cols.bed_utilization
-        else:
-            y_col_scatter = cols.refusal_rate
-
-        if not y_col_scatter:
-            y_col_scatter = cols.refusal_rate or cols.refusals
-
-        # Filter by week range
-        dff_scatter = df.copy()
-        if week_range:
-            dff_scatter = dff_scatter[
-                (dff_scatter[cols.week] >= week_range[0])
-                & (dff_scatter[cols.week] <= week_range[1])
-            ]
-
-        return make_scatter(
-            dff_scatter,
-            x_col=x_col or cols.requests,
-            y_col=y_col_scatter or cols.refusals,
-            color_col=cols.service,
-            size_col=cols.refusal_rate,
-            week_col=cols.week,
-            hover_data=[cols.event] if cols.event else None,
-            title="Staffing vs. Utilization",
-            selected_service=selected_service,
-            selected_week=selected_week,
-        )
-
-    # ========== CALLBACK 5: Update Capacity Breakdown ==========
-    @app.callback(
-        Output("capacity-breakdown", "figure"),
-        Input("global-state", "data"),
-    )
-    def update_capacity(state):
-        selected_week = state.get("selected_week")
-        selected_service = state.get("selected_service")
-
-        if selected_week and selected_service:
-            return make_capacity_breakdown(
-                df,
-                week=selected_week,
-                service=selected_service,
-                week_col=cols.week,
-                service_col=cols.service,
-                beds_col=cols.beds,
-                admitted_col=cols.admissions,
-                refused_col=cols.refusals,
-                staff_col=cols.staff,
-                utilization_col=cols.bed_utilization,
-                patients_per_staff_col=cols.patients_per_staff,
-                title="Capacity Breakdown",
-            )
-        else:
-            import plotly.graph_objects as go
-
-            breakdown_fig = go.Figure()
-            breakdown_fig.add_annotation(
-                text="👆 Select a cell in the heatmap above<br>to see detailed case explanation",
-                xref="paper",
-                yref="paper",
-                x=0.5,
-                y=0.5,
-                showarrow=False,
-                font=dict(size=14, color="#666"),
-            )
-            breakdown_fig.update_layout(
-                title="Case Explanation — Awaiting Selection",
-                xaxis=dict(visible=False),
-                yaxis=dict(visible=False),
-                margin=dict(l=20, r=20, t=60, b=20),
-                plot_bgcolor="rgba(248,249,250,0.5)",
-            )
-            return breakdown_fig
 
     return app
