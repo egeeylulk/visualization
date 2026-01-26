@@ -295,7 +295,7 @@ def make_diagnostic_timeline(
         rows=num_rows,
         cols=1,
         shared_xaxes=True,
-        vertical_spacing=0.04,
+        vertical_spacing=0.1,
         row_heights=row_heights,
         subplot_titles=subplot_titles,
     )
@@ -545,7 +545,7 @@ def make_diagnostic_timeline(
         zeroline=False,
     )
 
-    # ========== SELECTED WEEK MARKER (Vertical dashed line across all rows) ==========
+# ========== SELECTED WEEK MARKER (Vertical dashed line across all rows) ==========
     if selected_week is not None:
         for row in range(1, num_rows + 1):
             fig.add_vline(
@@ -560,11 +560,15 @@ def make_diagnostic_timeline(
         # Add annotation at top with "Selected Week" label
         fig.add_annotation(
             x=selected_week,
-            y=1.02,
-            xref="x",
+            y=1.06,  # Raised slightly to clear the subplot title
+            xref="x", 
             yref="paper",
             text=f"<b>▼ Week {selected_week}</b>",
             showarrow=False,
+            xanchor="center",  # Centers the box horizontally on the line
+            yanchor="bottom",  # Anchors the box to sit ON TOP of the y-coordinate
+            align="center",    # Centers the text inside the box
+            # -----------------------
             font=dict(size=10, color="#2c3e50"),
             bgcolor="rgba(255,255,255,0.95)",
             bordercolor="#2c3e50",
@@ -583,7 +587,7 @@ def make_diagnostic_timeline(
         barmode="group",
         hovermode="x unified",
         showlegend=False,  # Using row-local inline legends in subplot titles
-        margin=dict(l=60, r=70, t=100, b=40),  # Right margin for direct labels
+        margin=dict(l=60, r=70, t=120, b=40),
         plot_bgcolor="white",
     )
 

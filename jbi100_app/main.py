@@ -187,12 +187,6 @@ def create_app():
                                                 children=[
                                                     html.Div(
                                                         [
-                                                            html.Span(
-                                                                "📊",
-                                                                style={
-                                                                    "fontSize": "28px"
-                                                                },
-                                                            ),
                                                             html.P(
                                                                 "Diagnose",
                                                                 style={
