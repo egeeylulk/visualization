@@ -1,14 +1,3 @@
-# jbi100_app/views/panels.py
-"""
-BedFlow Diagnostic Dashboard - Visualization Panels
-====================================================
-Implements the three-view diagnostic architecture:
-1. Problem Locator (Heatmap) - Anomaly detection
-2. Diagnostic Decomposition (Multi-factor Timeline) - Causal analysis
-3. Impact Validation (Morale & Satisfaction Timeline) - Consequence assessment
-
-Design follows Munzner's channel rankings and expressiveness/effectiveness principles.
-"""
 
 from typing import Optional, List
 import pandas as pd
@@ -18,11 +7,7 @@ from plotly.subplots import make_subplots
 import textwrap
 
 
-# ============================================================================
-# Shared Layout Helpers
-# ============================================================================
 def wrap_title(text: str, width: int = 38) -> str:
-    """Wrap text for Plotly annotations using <br>."""
     text = text.replace(" — ", " — ")
     lines = textwrap.wrap(
         text, width=width, break_long_words=False, break_on_hyphens=False
@@ -31,7 +16,6 @@ def wrap_title(text: str, width: int = 38) -> str:
 
 
 def apply_title(fig, title: str, top_margin: int = 140, font_size: int = 16):
-    """Apply a centered title with consistent margins."""
     fig.update_layout(
         title=dict(
             text=title,
@@ -55,7 +39,6 @@ def apply_standard_layout(
     legend_y: float = 1.08,
     legend_orientation: str = "h",
 ):
-    """Standard layout for consistent styling across views."""
     apply_title(fig, title, top_margin=top_margin, font_size=font_size)
     fig.update_layout(
         margin=dict(l=20, r=20, t=top_margin, b=20),
@@ -70,9 +53,7 @@ def apply_standard_layout(
     return fig
 
 
-# ============================================================================
-# VIEW 1: Problem Locator (Heatmap)
-# ============================================================================
+
 def make_heatmap_locator(
     df: pd.DataFrame,
     week_col: str,
@@ -83,30 +64,12 @@ def make_heatmap_locator(
     selected_service: Optional[str] = None,
     service_filter: Optional[str] = None,
 ):
-    """
-    Creates the Problem Locator heatmap.
-
-    Purpose: Support the task "Where and when do abnormal refusal rates occur?"
-
-    Data Mapping:
-    - service (categorical) → Y position
-    - week (ordered temporal) → X position
-    - refusal_rate (quantitative) → Color (luminance)
-
-    Marks & Channels:
-    - Mark: rectangle
-    - X position → week (highest ranked channel)
-    - Y position → service
-    - Color luminance → refusal rate (best for ordered quantitative)
-    """
     dff = df[[week_col, service_col]].copy()
     dff["value"] = values.values
 
-    # Apply service filter
     if service_filter and service_filter != "__ALL__":
         dff = dff[dff[service_col] == service_filter]
 
-    # Create pivot table for heatmap
     pivot = dff.pivot_table(
         index=service_col,
         columns=week_col,
@@ -115,7 +78,6 @@ def make_heatmap_locator(
         fill_value=0,
     )
 
-    # Sort services by mean value (optional enhancement)
     pivot = pivot.reindex(pivot.mean(axis=1).sort_values(ascending=False).index)
 
     fig = px.imshow(
@@ -125,7 +87,6 @@ def make_heatmap_locator(
         labels=dict(x="Week", y="Service", color="Value"),
     )
 
-    # Highlight selected cell with a bold border
     if selected_week is not None and selected_service is not None:
         services = list(pivot.index)
         weeks = list(pivot.columns)
@@ -140,7 +101,6 @@ def make_heatmap_locator(
                 y1=y_idx + 0.5,
                 line=dict(color="#2c3e50", width=4),
             )
-            # Add selection indicator annotation
             fig.add_annotation(
                 x=x_idx,
                 y=y_idx,
@@ -161,7 +121,6 @@ def make_heatmap_locator(
         ),
     )
 
-    # Enhanced hover template with detailed info
     fig.update_traces(
         hovertemplate=(
             "<b>%{y}</b><br>"
@@ -174,9 +133,6 @@ def make_heatmap_locator(
     return fig
 
 
-# ============================================================================
-# VIEW 2: Diagnostic Decomposition (Multi-factor Timeline)
-# ============================================================================
 def make_diagnostic_timeline(
     df: pd.DataFrame,
     week_col: str,
@@ -193,35 +149,16 @@ def make_diagnostic_timeline(
     selected_service: Optional[str] = None,
     selected_week: Optional[int] = None,
     diagnostic_focus: str = "refusal_rate",
+    highlight_range: Optional[List[float]] = None,
 ):
-    """
-    Creates the Diagnostic Decomposition multi-factor timeline.
-
-    Purpose: Support the task "Why did refusals increase here?"
-    Enable causal reasoning by visual alignment of all relevant factors.
-
-    Visual Structure: Single chart area with shared x-axis (week), stacked rows:
-    - Row 1: Demand / Admitted / Refused (stacked bars)
-    - Row 2: Bed utilization (line)
-    - Row 3: Staff availability (line)
-    - Row 4: Patients per staff (line)
-    - Row 5: Exogenous events (colored bands)
-
-    Marks & Channels:
-    - Bars: demand/admitted/refused
-    - Lines: utilization, staff, ratio
-    - Rectangular bands: events
-    - Vertical rule: selected week
-    """
     if visible_events is None:
         visible_events = ["flu", "strike", "donation"]
 
-    # Placeholder when no selection
     if selected_service is None:
         fig = go.Figure()
         fig.add_annotation(
             text=(
-                "👆 <b>Select a service-week in the heatmap above</b><br><br>"
+                "<b>Select a service-week in the heatmap above</b><br><br>"
                 "This view will show:<br>"
                 "• Patient flow (requests, admitted, refused)<br>"
                 "• Resource constraints (beds, staff)<br>"
@@ -247,11 +184,9 @@ def make_diagnostic_timeline(
 
     dff = df.copy()
 
-    # Filter to selected service
     if service_col in dff.columns and selected_service:
         dff = dff[dff[service_col] == selected_service]
 
-    # Window constraint: ±6 weeks from selected week
     if selected_week is not None:
         week_min = max(1, selected_week - 6)
         week_max = selected_week + 6
@@ -263,12 +198,9 @@ def make_diagnostic_timeline(
         else "All Services"
     )
 
-    # Create subplots with shared x-axis
-    # Row heights: bars (larger), utilization, staff, pts/staff, event lane
     row_heights = [0.38, 0.18, 0.18, 0.14, 0.12]
     num_rows = 5
 
-    # Subplot titles with inline colored legends (semantic grouping)
     subplot_titles = [
         (
             "<b>Patient Flow</b> — "
@@ -300,7 +232,6 @@ def make_diagnostic_timeline(
         subplot_titles=subplot_titles,
     )
 
-    # Aggregate data by week
     agg_dict = {}
     if requests_col and requests_col in dff.columns:
         agg_dict[requests_col] = "sum"
@@ -319,7 +250,15 @@ def make_diagnostic_timeline(
 
     agg = dff.groupby(week_col, dropna=False).agg(agg_dict).reset_index()
 
-    # ========== ROW 1: Patient Flow (Stacked Bars) ==========
+    selected_indices = None
+    if highlight_range:
+        selected_indices = agg[
+            (agg[week_col] >= highlight_range[0]) &
+            (agg[week_col] <= highlight_range[1])
+        ].index.tolist()
+
+
+
     if requests_col and requests_col in agg.columns:
         fig.add_trace(
             go.Bar(
@@ -366,9 +305,7 @@ def make_diagnostic_timeline(
             col=1,
         )
 
-    # ========== ROW 2: Bed Utilization (Line) ==========
     if bed_utilization_col and bed_utilization_col in agg.columns:
-        # Determine line emphasis based on diagnostic focus
         line_width = 3 if diagnostic_focus == "bed_utilization" else 2
         line_color = "#e74c3c" if diagnostic_focus == "bed_utilization" else "#9b59b6"
 
@@ -386,7 +323,6 @@ def make_diagnostic_timeline(
             row=2,
             col=1,
         )
-        # Add direct label at end of line (larger, color-matched)
         if not agg.empty:
             last_week = agg[week_col].iloc[-1]
             last_val = agg[bed_utilization_col].iloc[-1]
@@ -401,7 +337,6 @@ def make_diagnostic_timeline(
                 xshift=10,
                 font=dict(size=11, color=line_color),
             )
-        # Add capacity threshold line at 90% (subdued color)
         fig.add_hline(
             y=0.9,
             line_dash="dot",
@@ -413,7 +348,6 @@ def make_diagnostic_timeline(
             col=1,
         )
 
-    # ========== ROW 3: Staff Availability (Line) ==========
     if staff_col and staff_col in agg.columns:
         line_width = 3 if diagnostic_focus == "patients_per_staff" else 2
         line_color = (
@@ -434,7 +368,6 @@ def make_diagnostic_timeline(
             row=3,
             col=1,
         )
-        # Add direct label at end of line (larger, color-matched)
         if not agg.empty:
             last_week = agg[week_col].iloc[-1]
             last_val = agg[staff_col].iloc[-1]
@@ -450,7 +383,6 @@ def make_diagnostic_timeline(
                 font=dict(size=11, color=line_color),
             )
 
-    # ========== ROW 4: Patients per Staff (Line) ==========
     if patients_per_staff_col and patients_per_staff_col in agg.columns:
         line_width = 3 if diagnostic_focus == "patients_per_staff" else 2
         line_color = (
@@ -471,7 +403,6 @@ def make_diagnostic_timeline(
             row=4,
             col=1,
         )
-        # Add direct label at end of line (larger, color-matched)
         if not agg.empty:
             last_week = agg[week_col].iloc[-1]
             last_val = agg[patients_per_staff_col].iloc[-1]
@@ -487,15 +418,12 @@ def make_diagnostic_timeline(
                 font=dict(size=11, color=line_color),
             )
 
-    # ========== ROW 5: EVENT LANE (Dedicated stacked strips) ==========
-    # Event colors - solid for strips, matched to control panel
     event_config = {
         "flu": {"color": "#f1c40f", "y_base": 2, "label": "Flu"},
         "strike": {"color": "#e67e22", "y_base": 1, "label": "Strike"},
         "donation": {"color": "#27ae60", "y_base": 0, "label": "Donation"},
     }
-    strip_height = 0.8  # Height of each strip
-
+    strip_height = 0.8 
     if event_col and event_col in dff.columns:
         event_weeks = dff.groupby([week_col, event_col]).size().reset_index()
 
@@ -506,7 +434,6 @@ def make_diagnostic_timeline(
             if not event_data.empty:
                 weeks_with_event = sorted(event_data[week_col].unique())
 
-                # Consolidate consecutive weeks into ranges
                 i = 0
                 while i < len(weeks_with_event):
                     start = weeks_with_event[i]
@@ -518,8 +445,13 @@ def make_diagnostic_timeline(
                         i += 1
                         end = weeks_with_event[i]
 
-                    # Add horizontal strip in event lane (Row 5)
                     y_base = config["y_base"]
+                    
+                    shape_opacity = 0.85
+                    if highlight_range:
+                        if end < highlight_range[0] or start > highlight_range[1]:
+                            shape_opacity = 0.2
+
                     fig.add_shape(
                         type="rect",
                         x0=start - 0.4,
@@ -528,14 +460,13 @@ def make_diagnostic_timeline(
                         y1=y_base + strip_height,
                         fillcolor=config["color"],
                         line=dict(color=config["color"], width=1),
-                        opacity=0.85,
+                        opacity=shape_opacity,
                         xref="x5",
                         yref="y5",
                         layer="above",
                     )
                     i += 1
 
-    # Configure event lane y-axis (hide ticks, show category labels)
     fig.update_yaxes(
         row=5,
         col=1,
@@ -545,7 +476,19 @@ def make_diagnostic_timeline(
         zeroline=False,
     )
 
-# ========== SELECTED WEEK MARKER (Vertical dashed line across all rows) ==========
+    if not agg.empty:
+         fig.add_trace(
+            go.Scatter(
+                x=agg[week_col],
+                y=[1.5] * len(agg), 
+                mode="markers",
+                marker=dict(opacity=0, size=0), 
+                showlegend=False,
+                hoverinfo="skip"
+            ),
+            row=5, col=1
+        )
+
     if selected_week is not None:
         for row in range(1, num_rows + 1):
             fig.add_vline(
@@ -557,18 +500,16 @@ def make_diagnostic_timeline(
                 col=1,
             )
 
-        # Add annotation at top with "Selected Week" label
         fig.add_annotation(
             x=selected_week,
-            y=1.06,  # Raised slightly to clear the subplot title
+            y=1.06,  
             xref="x", 
             yref="paper",
             text=f"<b>▼ Week {selected_week}</b>",
             showarrow=False,
-            xanchor="center",  # Centers the box horizontally on the line
-            yanchor="bottom",  # Anchors the box to sit ON TOP of the y-coordinate
-            align="center",    # Centers the text inside the box
-            # -----------------------
+            xanchor="center", 
+            yanchor="bottom",  
+            align="center",    
             font=dict(size=10, color="#2c3e50"),
             bgcolor="rgba(255,255,255,0.95)",
             bordercolor="#2c3e50",
@@ -576,36 +517,81 @@ def make_diagnostic_timeline(
             borderpad=3,
         )
 
-    # ========== LAYOUT ==========
+
     title_text = f"Diagnostic Decomposition — {service_display}"
     if selected_week:
         title_text += f" (Week {selected_week} ±6)"
 
     fig.update_layout(
         title=dict(text=title_text, x=0.5, font=dict(size=16)),
-        height=630,  # Increased for 5 rows
+        height=630,  
         barmode="group",
         hovermode="x unified",
-        showlegend=False,  # Using row-local inline legends in subplot titles
+        showlegend=False,  
         margin=dict(l=60, r=70, t=120, b=40),
         plot_bgcolor="white",
     )
 
-    # Update y-axes labels (compact)
     fig.update_yaxes(title_text="Patients", row=1, col=1)
     fig.update_yaxes(title_text="Rate", tickformat=".0%", row=2, col=1)
     fig.update_yaxes(title_text="Count", row=3, col=1)
     fig.update_yaxes(title_text="Ratio", row=4, col=1)
-    # Row 5 (Events) y-axis already configured above
+    
     fig.update_xaxes(title_text="Week", row=num_rows, col=1)
-    # All legends are now in subplot titles - no floating annotations needed
+    
+
+    
+    if selected_indices is not None:
+    
+        if highlight_range and not agg.empty:
+            x_min = agg[week_col].min()
+            x_max = agg[week_col].max()
+            
+            if highlight_range[0] > x_min:
+                fig.add_shape(
+                    type="rect",
+                    x0=x_min - 5, 
+                    x1=highlight_range[0],
+                    y0=0,
+                    y1=1,
+                    xref="x",
+                    yref="paper",
+                    fillcolor="white",
+                    opacity=0.75,
+                    layer="above", 
+                    line_width=0,
+                )
+            
+            if highlight_range[1] < x_max:
+                fig.add_shape(
+                    type="rect",
+                    x0=highlight_range[1],
+                    x1=x_max + 5,
+                    y0=0,
+                    y1=1,
+                    xref="x",
+                    yref="paper",
+                    fillcolor="white",
+                    opacity=0.75,
+                    layer="above", 
+                    line_width=0,
+                )
+
+        fig.update_traces(
+            selectedpoints=selected_indices,
+            unselected=dict(
+                marker=dict(opacity=0.2)
+            )
+        )
+
+    fig.update_layout(
+        dragmode="select",
+        uirevision=selected_service or "default"
+    )
 
     return fig
 
 
-# ============================================================================
-# VIEW 3: Impact Validation (Morale & Satisfaction Timeline)
-# ============================================================================
 def make_impact_validation(
     df: pd.DataFrame,
     week_col: str,
@@ -614,29 +600,14 @@ def make_impact_validation(
     satisfaction_col: Optional[str] = None,
     selected_service: Optional[str] = None,
     selected_week: Optional[int] = None,
+    highlight_range: Optional[List[float]] = None,
 ):
-    """
-    Creates the Impact Validation timeline.
-
-    Purpose: Support the task "Did this operational failure have consequences?"
-
-    Data Mapping:
-    - staff_morale (ordinal) → line y-position
-    - patient_satisfaction (ordinal) → line y-position
-    - week (temporal) → x-position
-
-    Marks & Channels:
-    - Lines
-    - X position → week
-    - Y position → score
-    - Color → variable (morale vs satisfaction)
-    """
-    # Placeholder when no selection
+    
     if selected_service is None:
         fig = go.Figure()
         fig.add_annotation(
             text=(
-                "👆 <b>Select a service-week in the heatmap</b><br><br>"
+                "<b>Select a service-week in the heatmap</b><br><br>"
                 "This view will show:<br>"
                 "• Staff morale trends<br>"
                 "• Patient satisfaction scores<br>"
@@ -662,11 +633,9 @@ def make_impact_validation(
 
     dff = df.copy()
 
-    # Filter to selected service
     if service_col in dff.columns and selected_service:
         dff = dff[dff[service_col] == selected_service]
 
-    # Window constraint: ±6 weeks
     if selected_week is not None:
         week_min = max(1, selected_week - 6)
         week_max = selected_week + 6
@@ -678,7 +647,6 @@ def make_impact_validation(
         else "All Services"
     )
 
-    # Aggregate by week
     agg_dict = {}
     if morale_col and morale_col in dff.columns:
         agg_dict[morale_col] = "mean"
@@ -705,9 +673,15 @@ def make_impact_validation(
 
     agg = dff.groupby(week_col, dropna=False).agg(agg_dict).reset_index()
 
+    selected_indices = None
+    if highlight_range:
+        selected_indices = agg[
+            (agg[week_col] >= highlight_range[0]) &
+            (agg[week_col] <= highlight_range[1])
+        ].index.tolist()
+
     fig = go.Figure()
 
-    # Staff Morale line
     if morale_col and morale_col in agg.columns:
         fig.add_trace(
             go.Scatter(
@@ -721,7 +695,6 @@ def make_impact_validation(
             )
         )
 
-    # Patient Satisfaction line
     if satisfaction_col and satisfaction_col in agg.columns:
         fig.add_trace(
             go.Scatter(
@@ -735,7 +708,6 @@ def make_impact_validation(
             )
         )
 
-    # Calculate y-axis range with padding
     all_values: List[float] = []
     if morale_col and morale_col in agg.columns:
         all_values.extend(agg[morale_col].dropna().tolist())
@@ -750,7 +722,6 @@ def make_impact_validation(
     else:
         y_range = [0, 100]
 
-    # Selected week marker
     if selected_week is not None:
         fig.add_vline(
             x=selected_week,
@@ -762,7 +733,6 @@ def make_impact_validation(
             annotation_font=dict(size=10, color="#2c3e50"),
         )
 
-        # Add before/during/after regions
         week_min = max(1, selected_week - 6)
         week_max = selected_week + 6
         if selected_week > week_min:
@@ -810,12 +780,56 @@ def make_impact_validation(
         plot_bgcolor="white",
     )
 
+    if selected_indices is not None:
+        if highlight_range and not agg.empty:
+            x_min = agg[week_col].min()
+            x_max = agg[week_col].max()
+            
+            if highlight_range[0] > x_min:
+                fig.add_shape(
+                    type="rect",
+                    x0=x_min - 5, 
+                    x1=highlight_range[0],
+                    y0=0,
+                    y1=1,
+                    xref="x",
+                    yref="paper",
+                    fillcolor="white",
+                    opacity=0.75,
+                    layer="above", 
+                    line_width=0,
+                )
+            
+            if highlight_range[1] < x_max:
+                fig.add_shape(
+                    type="rect",
+                    x0=highlight_range[1],
+                    x1=x_max + 5,
+                    y0=0,
+                    y1=1,
+                    xref="x",
+                    yref="paper",
+                    fillcolor="white",
+                    opacity=0.75,
+                    layer="above", 
+                    line_width=0,
+                )
+
+        fig.update_traces(
+            selectedpoints=selected_indices,
+            unselected=dict(
+                marker=dict(opacity=0.2)
+            )
+        )
+
+    fig.update_layout(
+        dragmode="select",
+        uirevision=selected_service or "default"
+    )
+
     return fig
 
 
-# ============================================================================
-# LEGACY SUPPORT: Wrapper functions for backward compatibility
-# ============================================================================
 def make_heatmap_interactive(
     df: pd.DataFrame,
     week_col: str,
@@ -825,7 +839,6 @@ def make_heatmap_interactive(
     selected_week: Optional[int] = None,
     selected_service: Optional[str] = None,
 ):
-    """Backward compatible wrapper for make_heatmap_locator."""
     return make_heatmap_locator(
         df=df,
         week_col=week_col,
@@ -849,10 +862,8 @@ def make_event_timeline(
     selected_service: Optional[str] = None,
     selected_week: Optional[int] = None,
     service_col: Optional[str] = None,
-    comparison_mode: str = "single",
     **kwargs,
 ):
-    """Backward compatible wrapper for make_diagnostic_timeline."""
     return make_diagnostic_timeline(
         df=df,
         week_col=week_col,
@@ -878,7 +889,6 @@ def make_human_cost_timeline(
     selected_week: Optional[int] = None,
     service_col: Optional[str] = None,
 ):
-    """Backward compatible wrapper for make_impact_validation."""
     return make_impact_validation(
         df=df,
         week_col=week_col,

@@ -13,9 +13,8 @@ class HBCols:
     admissions: Optional[str]
     refusals: Optional[str]
     beds: Optional[str]
-    staff: Optional[str]  # derived staff count column name (we will add it)
-    event: Optional[str] = None  # event column (flu, strike, etc.)
-    # Computed columns
+    staff: Optional[str]  
+    event: Optional[str] = None 
     refusal_rate: Optional[str] = None
     bed_utilization: Optional[str] = None
     patients_per_staff: Optional[str] = None
@@ -49,19 +48,8 @@ def _read_csv_if_exists(path: Path) -> Optional[pd.DataFrame]:
 def load_hospitalbeds(
     data_dir: str = "data",
 ) -> Tuple[pd.DataFrame, HBCols, Dict[str, pd.DataFrame]]:
-    """
-    Loads:
-      - services_weekly.csv (required)
-      - staff_schedule.csv (optional)
-      - staff.csv (optional)
-      - patients.csv (optional)
-
-    Returns:
-      weekly_df, cols, extras(dict of other dfs)
-    """
     data_path = Path(data_dir)
 
-    # ---- 1) Weekly dataset (required)
     weekly_file = None
     for name in [
         "services_weekly.csv",
@@ -103,13 +91,12 @@ def load_hospitalbeds(
     )
     beds = _pick_col(weekly, ["available_beds", "beds", "bed_available"])
 
-    # Ensure week is sortable (your week is numeric)
+
     try:
         weekly[week] = pd.to_numeric(weekly[week])
     except Exception:
         pass
 
-    # ---- 2) Optional datasets
     staff_schedule = _read_csv_if_exists(data_path / "staff_schedule.csv")
     staff_master = _read_csv_if_exists(data_path / "staff.csv")
     patients = _read_csv_if_exists(data_path / "patients.csv")
@@ -122,8 +109,6 @@ def load_hospitalbeds(
     if patients is not None:
         extras["patients"] = patients
 
-    # ---- 3) Derive staff availability per (week, service) from staff_schedule
-    # Add a new column into weekly: "available_staff" (count of present staff)
     staff_col_name = None
     if staff_schedule is not None:
         wcol = _pick_col(staff_schedule, ["week"])
@@ -131,13 +116,11 @@ def load_hospitalbeds(
         present = _pick_col(staff_schedule, ["present"])
 
         if wcol and scol and present:
-            # Make week numeric if possible
             try:
                 staff_schedule[wcol] = pd.to_numeric(staff_schedule[wcol])
             except Exception:
                 pass
 
-            # Count present staff per week/service
             sched = staff_schedule.copy()
             sched[present] = pd.to_numeric(sched[present], errors="coerce").fillna(0)
 
@@ -148,7 +131,6 @@ def load_hospitalbeds(
                 .reset_index(name="available_staff")
             )
 
-            # Merge into weekly
             weekly = weekly.merge(
                 staff_counts,
                 how="left",
@@ -156,7 +138,6 @@ def load_hospitalbeds(
                 right_on=[wcol, scol],
             )
 
-            # Clean up duplicate join columns if names differ
             if wcol != week and wcol in weekly.columns:
                 weekly.drop(columns=[wcol], inplace=True)
             if scol != service and scol in weekly.columns:
@@ -165,32 +146,26 @@ def load_hospitalbeds(
             weekly["available_staff"] = weekly["available_staff"].fillna(0).astype(int)
             staff_col_name = "available_staff"
 
-    # ---- 4) Detect event column
     event_col = _pick_col(weekly, ["event", "events", "special_event"])
 
-    # ---- 5) Compute derived metrics for visualizations
-    # Refusal rate
     refusal_rate_col = None
     if requests and refusals:
         denom = weekly[requests].replace(0, float("nan"))
         weekly["refusal_rate"] = (weekly[refusals] / denom).fillna(0.0)
         refusal_rate_col = "refusal_rate"
 
-    # Bed utilization
     bed_util_col = None
     if admissions and beds:
         denom = weekly[beds].replace(0, float("nan"))
         weekly["bed_utilization"] = (weekly[admissions] / denom).fillna(0.0)
         bed_util_col = "bed_utilization"
 
-    # Patients per staff
     patients_per_staff_col = None
     if admissions and staff_col_name:
         denom = weekly[staff_col_name].replace(0, float("nan"))
         weekly["patients_per_staff"] = (weekly[admissions] / denom).fillna(0.0)
         patients_per_staff_col = "patients_per_staff"
 
-    # Demand level (binned from requests)
     demand_level_col = None
     if requests:
         req_median = weekly[requests].median()
@@ -202,7 +177,6 @@ def load_hospitalbeds(
         )
         demand_level_col = "demand_level"
 
-    # Refusal level (binned from refusal_rate)
     refusal_level_col = None
     if refusal_rate_col:
         weekly["refusal_level"] = pd.cut(
@@ -219,7 +193,7 @@ def load_hospitalbeds(
         admissions=admissions,
         refusals=refusals,
         beds=beds,
-        staff=staff_col_name,  # None if we couldn't derive
+        staff=staff_col_name,  
         event=event_col,
         refusal_rate=refusal_rate_col,
         bed_utilization=bed_util_col,

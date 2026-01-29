@@ -1,19 +1,3 @@
-# jbi100_app/main.py
-"""
-BedFlow Diagnostic Dashboard - Main Application
-================================================
-Implements the three-view diagnostic architecture:
-1. VIEW 1 - Problem Locator (Heatmap) - Always visible
-2. VIEW 2 - Diagnostic Decomposition (Multi-factor Timeline)
-3. VIEW 3 - Impact Validation (Morale & Satisfaction)
-
-Layout follows the specification:
-- Left Control Panel (sidebar)
-- Main content area with three coordinated views
-
-Workflow: Locate → Diagnose → Validate → Explain
-"""
-
 from dash import Dash, html, dcc, Input, Output, State
 import pandas as pd
 
@@ -27,21 +11,17 @@ from .data import load_hospitalbeds
 
 
 def create_app():
-    """Create and configure the Dash application."""
     app = Dash(__name__)
     app.title = "BedFlow Diagnostic Dashboard"
 
-    # ========== DATA LOADING ==========
     df, cols, extras = load_hospitalbeds("data")
 
-    # Extract metadata
     services = sorted(df[cols.service].dropna().astype(str).unique().tolist())
     events = []
     if cols.event and cols.event in df.columns:
         events = sorted(df[cols.event].dropna().astype(str).unique().tolist())
     max_week = int(df[cols.week].max()) if cols.week else 52
 
-    # Detect morale and satisfaction columns
     morale_col = None
     satisfaction_col = None
     for col in df.columns:
@@ -50,11 +30,9 @@ def create_app():
         if "satisfaction" in col.lower():
             satisfaction_col = col
 
-    # ========== LAYOUT ==========
     app.layout = html.Div(
         className="container",
         children=[
-            # ========== GLOBAL STATE STORE ==========
             dcc.Store(
                 id="global-state",
                 data={
@@ -63,18 +41,17 @@ def create_app():
                     "diagnostic_focus": "refusal_rate",
                     "visible_events": ["flu", "strike", "donation"],
                     "service_filter": "__ALL__",
+                    "brush_range": None,
+                    "brush_source": None,
                 },
             ),
-            # ========== MAIN LAYOUT ==========
             html.Div(
                 className="dashboard-layout",
                 children=[
-                    # ========== LEFT SIDEBAR (Control Panel) ==========
                     html.Div(
                         className="sidebar",
                         id="left-column",
                         children=[
-                            # Mobile toggle button
                             html.Button(
                                 "☰ Controls",
                                 id="sidebar-toggle",
@@ -87,12 +64,10 @@ def create_app():
                             ),
                         ],
                     ),
-                    # ========== MAIN CONTENT AREA ==========
                     html.Div(
                         className="main-content",
                         id="right-column",
                         children=[
-                            # ========== VIEW 1: Problem Locator (Heatmap) ==========
                             html.Div(
                                 className="view-section view-1",
                                 id="view-1-section",
@@ -141,7 +116,6 @@ def create_app():
                                     ),
                                 ],
                             ),
-                            # ========== PLACEHOLDER (shown when no selection) ==========
                             html.Div(
                                 id="placeholder-section",
                                 className="placeholder-section",
@@ -239,7 +213,6 @@ def create_app():
                                     ),
                                 ],
                             ),
-                            # ========== VIEW 2: Diagnostic Decomposition ==========
                             html.Div(
                                 className="view-section view-2",
                                 id="view-2-section",
@@ -280,7 +253,6 @@ def create_app():
                                     ),
                                 ],
                             ),
-                            # ========== VIEW 3: Impact Validation ==========
                             html.Div(
                                 className="view-section view-3",
                                 id="view-3-section",
@@ -328,27 +300,21 @@ def create_app():
         ],
     )
 
-    # ========== HELPER FUNCTIONS ==========
     def metric_series(dff: pd.DataFrame, metric: str) -> pd.Series:
-        """Get the appropriate metric series based on diagnostic focus."""
+       
         if metric == "refusal_rate" and cols.refusal_rate:
             return dff[cols.refusal_rate]
         if metric == "bed_utilization" and cols.bed_utilization:
             return dff[cols.bed_utilization]
         if metric == "patients_per_staff" and cols.patients_per_staff:
             return dff[cols.patients_per_staff]
-        # Fallback to refusal_rate
         if cols.refusal_rate:
             return dff[cols.refusal_rate]
-        # Ultimate fallback
         if cols.requests and cols.refusals:
             denom = dff[cols.requests].replace(0, pd.NA)
             return (dff[cols.refusals] / denom).fillna(0)
         return pd.Series([0] * len(dff))
 
-    # ========== CALLBACKS ==========
-
-    # Callback 1: Handle heatmap click, clear buttons, and service filter changes
     @app.callback(
         Output("global-state", "data"),
         Input("heatmap", "clickData"),
@@ -367,33 +333,29 @@ def create_app():
 
         triggered_id = callback_context.triggered[0]["prop_id"].split(".")[0]
 
-        # Handle clear button
         if triggered_id == "clear-selection-btn":
             current_state["selected_service"] = None
             current_state["selected_week"] = None
+            current_state["brush_range"] = None
+            current_state["brush_source"] = None
             return current_state
 
-        # Handle service filter change (Rule A2: keep selection only if consistent)
         if triggered_id == "service-select":
             current_state["service_filter"] = service_filter
             selected_service = current_state.get("selected_service")
 
-            # If a service is selected and the filter doesn't match, clear selection
             if selected_service is not None:
                 if service_filter != "__ALL__" and service_filter != selected_service:
-                    # Clear selection because filter doesn't match
                     current_state["selected_service"] = None
                     current_state["selected_week"] = None
             return current_state
 
-        # Handle heatmap click
         if triggered_id == "heatmap" and click_data:
             try:
                 point = click_data["points"][0]
                 service = point["y"]
                 week = int(point["x"])
 
-                # Toggle deselection if same cell clicked
                 if (
                     current_state.get("selected_service") == service
                     and current_state.get("selected_week") == week
@@ -404,13 +366,15 @@ def create_app():
                     current_state["selected_service"] = service
                     current_state["selected_week"] = week
 
+                current_state["brush_range"] = None  
+                current_state["brush_source"] = None
+
                 return current_state
             except (KeyError, IndexError, TypeError):
                 return current_state
 
         return current_state
 
-    # Callback 2: Sync controls with global state
     @app.callback(
         Output("diagnostic-focus", "value"),
         Output("event-visibility", "value"),
@@ -422,7 +386,6 @@ def create_app():
             state.get("visible_events", ["flu", "strike", "donation"]),
         )
 
-    # Callback 3: Update global state from menu controls
     @app.callback(
         Output("global-state", "data", allow_duplicate=True),
         Input("diagnostic-focus", "value"),
@@ -435,7 +398,6 @@ def create_app():
         state["visible_events"] = visible_events or []
         return state
 
-    # Callback 4: Update selection display in sidebar
     @app.callback(
         Output("selection-display", "children"),
         Input("global-state", "data"),
@@ -450,7 +412,6 @@ def create_app():
         else:
             return []
 
-    # Callback 5: Toggle visibility of diagnostic views
     @app.callback(
         Output("view-2-section", "style"),
         Output("view-3-section", "style"),
@@ -462,18 +423,17 @@ def create_app():
 
         if has_selection:
             return (
-                {"display": "block"},  # Show View 2
-                {"display": "block"},  # Show View 3
-                {"display": "none"},  # Hide placeholder
+                {"display": "block"},  
+                {"display": "block"},  
+                {"display": "none"},  
             )
         else:
             return (
-                {"display": "none"},  # Hide View 2
-                {"display": "none"},  # Hide View 3
-                {"display": "block"},  # Show placeholder
+                {"display": "none"},  
+                {"display": "none"},  
+                {"display": "block"},  
             )
 
-    # Callback 6: Update VIEW 1 - Heatmap
     @app.callback(
         Output("heatmap", "figure"),
         Input("global-state", "data"),
@@ -485,7 +445,6 @@ def create_app():
         selected_week = state.get("selected_week")
         selected_service = state.get("selected_service")
 
-        # Filter by week range
         dff_heatmap = df.copy()
         if week_range:
             dff_heatmap = dff_heatmap[
@@ -493,7 +452,6 @@ def create_app():
                 & (dff_heatmap[cols.week] <= week_range[1])
             ]
 
-        # Determine title based on diagnostic focus
         focus_labels = {
             "refusal_rate": "Refusal Rate",
             "patients_per_staff": "Staffing Pressure",
@@ -512,7 +470,36 @@ def create_app():
             service_filter=service_filter,
         )
 
-    # Callback 8: Update VIEW 2 - Diagnostic Timeline
+    @app.callback(
+        Output("global-state", "data", allow_duplicate=True),
+        Input("diagnostic-timeline", "selectedData"),
+        Input("impact-validation", "selectedData"),
+        State("global-state", "data"),
+        prevent_initial_call=True
+    )
+    def update_brush_selection(sel_diag, sel_impact, state):
+        from dash import callback_context, no_update
+
+        if not callback_context.triggered:
+            return no_update
+
+        triggered_id = callback_context.triggered[0]['prop_id'].split('.')[0]
+        selected_data = sel_diag if triggered_id == "diagnostic-timeline" else sel_impact
+
+        range_val = None
+        if selected_data and "range" in selected_data and "x" in selected_data["range"]:
+             range_val = selected_data["range"]["x"]
+
+        if range_val is None:
+            return no_update
+
+        if state.get("brush_range") == range_val:
+            return no_update
+
+        state["brush_range"] = range_val
+        state["brush_source"] = None 
+        return state
+
     @app.callback(
         Output("diagnostic-timeline", "figure"),
         Input("global-state", "data"),
@@ -524,15 +511,14 @@ def create_app():
         visible_events = state.get("visible_events", [])
         diagnostic_focus = state.get("diagnostic_focus", "refusal_rate")
         service_filter = state.get("service_filter", "__ALL__")
+        brush_range = state.get("brush_range")
 
-        # Filter by week range
         dff = df.copy()
         if week_range:
             dff = dff[
                 (dff[cols.week] >= week_range[0]) & (dff[cols.week] <= week_range[1])
             ]
 
-        # Apply global service filter to View 2
         if service_filter and service_filter != "__ALL__":
             dff = dff[dff[cols.service] == service_filter]
 
@@ -552,9 +538,9 @@ def create_app():
             selected_service=selected_service,
             selected_week=selected_week,
             diagnostic_focus=diagnostic_focus,
+            highlight_range=brush_range,
         )
 
-    # Callback 9: Update VIEW 3 - Impact Validation
     @app.callback(
         Output("impact-validation", "figure"),
         Input("global-state", "data"),
@@ -564,15 +550,14 @@ def create_app():
         selected_service = state.get("selected_service")
         selected_week = state.get("selected_week")
         service_filter = state.get("service_filter", "__ALL__")
+        brush_range = state.get("brush_range")
 
-        # Filter by week range
         dff = df.copy()
         if week_range:
             dff = dff[
                 (dff[cols.week] >= week_range[0]) & (dff[cols.week] <= week_range[1])
             ]
 
-        # Apply global service filter to View 3
         if service_filter and service_filter != "__ALL__":
             dff = dff[dff[cols.service] == service_filter]
 
@@ -584,9 +569,9 @@ def create_app():
             satisfaction_col=satisfaction_col,
             selected_service=selected_service,
             selected_week=selected_week,
+            highlight_range=brush_range,
         )
 
-    # Clientside callback: Auto-scroll to diagnostic views on selection
     app.clientside_callback(
         """
         function(state) {
@@ -609,7 +594,6 @@ def create_app():
         Input("global-state", "data"),
     )
 
-    # Clientside callback: Sidebar toggle for mobile
     app.clientside_callback(
         """
         function(n_clicks) {

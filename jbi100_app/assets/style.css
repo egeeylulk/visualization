@@ -1,38 +1,31 @@
-/* ========================================
-   BedFlow Diagnostic Dashboard - Styles
-   UI Color System (Light & Dark Themes)
-   WCAG AA Compliant
-   ======================================== */
-
-/* ========== CSS CUSTOM PROPERTIES (LIGHT THEME - DEFAULT) ========== */
 :root {
-    /* Core Palette (Neutral) */
+
     --color-background: #F8FAFC;
     --color-surface: #FFFFFF;
     --color-surface-alt: #F1F5F9;
     --color-border: #E2E8F0;
     --color-disabled: #CBD5E1;
 
-    /* Text Colors */
+
     --color-text-primary: #0F172A;
     --color-text-secondary: #475569;
     --color-text-muted: #94A3B8;
     --color-text-inverse: #FFFFFF;
 
-    /* Brand / Action Colors */
+
     --color-primary: #2563EB;
     --color-primary-hover: #1D4ED8;
     --color-primary-active: #1E40AF;
     --color-primary-light: rgba(37, 99, 235, 0.1);
     --color-accent: #0EA5E9;
 
-    /* Semantic Colors */
+
     --color-success: #16A34A;
     --color-warning: #F59E0B;
     --color-error: #DC2626;
     --color-info: #0284C7;
 
-    /* Chart Colors */
+
     --chart-blue: #2563EB;
     --chart-green: #16A34A;
     --chart-amber: #F59E0B;
@@ -40,49 +33,48 @@
     --chart-purple: #7C3AED;
     --chart-cyan: #0891B2;
 
-    /* Shadows */
+
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
     --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
     --shadow-dropdown: 0 4px 12px rgba(0, 0, 0, 0.08);
     --shadow-overlay: rgba(0, 0, 0, 0.4);
 
-    /* View accent colors */
+
     --view-1-accent: #2563EB;
     --view-2-accent: #7C3AED;
     --view-3-accent: #DC2626;
 }
 
-/* ========== DARK THEME ========== */
 @media (prefers-color-scheme: dark) {
     :root {
-        /* Core Palette (Neutral) */
+
         --color-background: #0F172A;
         --color-surface: #1E293B;
         --color-surface-alt: #334155;
         --color-border: #475569;
         --color-disabled: #64748B;
 
-        /* Text Colors */
+
         --color-text-primary: #F8FAFC;
         --color-text-secondary: #CBD5E1;
         --color-text-muted: #94A3B8;
         --color-text-inverse: #0F172A;
 
-        /* Brand / Action Colors */
+
         --color-primary: #3B82F6;
         --color-primary-hover: #60A5FA;
         --color-primary-active: #93C5FD;
         --color-primary-light: rgba(59, 130, 246, 0.15);
         --color-accent: #38BDF8;
 
-        /* Semantic Colors */
+
         --color-success: #22C55E;
         --color-warning: #FBBF24;
         --color-error: #EF4444;
         --color-info: #38BDF8;
 
-        /* Chart Colors (lighter for dark mode) */
+
         --chart-blue: #60A5FA;
         --chart-green: #4ADE80;
         --chart-amber: #FBBF24;
@@ -90,21 +82,20 @@
         --chart-purple: #A78BFA;
         --chart-cyan: #22D3EE;
 
-        /* Shadows */
+
         --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
         --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
         --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
         --shadow-dropdown: 0 4px 12px rgba(0, 0, 0, 0.4);
         --shadow-overlay: rgba(0, 0, 0, 0.6);
 
-        /* View accent colors */
+
         --view-1-accent: #3B82F6;
         --view-2-accent: #A78BFA;
         --view-3-accent: #F87171;
     }
 }
 
-/* ========== BASE STYLES ========== */
 body {
     background-color: var(--color-background);
     color: var(--color-text-primary);
@@ -115,14 +106,12 @@ body {
     line-height: 1.5;
 }
 
-/* ========== CONTAINER ========== */
 .container {
     max-width: 1800px;
     margin: 0 auto;
     padding: 0;
 }
 
-/* ========== DASHBOARD LAYOUT (Sidebar + Main) ========== */
 .dashboard-layout {
     display: flex;
     flex-direction: row;
@@ -131,7 +120,6 @@ body {
     min-height: 100vh;
 }
 
-/* ========== LEFT SIDEBAR ========== */
 .sidebar {
     flex: 0 0 280px;
     background-color: var(--color-surface);
@@ -167,7 +155,6 @@ body {
     display: block;
 }
 
-/* Sidebar sections */
 #description-card {
     margin-bottom: 20px;
 }
@@ -200,7 +187,6 @@ body {
     color: var(--color-text-primary);
 }
 
-/* ========== ACCORDION (Native details/summary) ========== */
 .accordion-section {
     border: 1px solid var(--color-border);
     border-radius: 8px;
@@ -250,7 +236,6 @@ body {
     background: var(--color-surface);
 }
 
-/* ========== MAIN CONTENT AREA ========== */
 .main-content {
     flex: 1;
     min-width: 0;
@@ -259,7 +244,6 @@ body {
     gap: 20px;
 }
 
-/* ========== VIEW SECTIONS ========== */
 .view-section {
     width: 100%;
 }
@@ -277,7 +261,6 @@ body {
     color: var(--color-text-primary);
 }
 
-/* ========== GRAPH CARDS ========== */
 .graph_card {
     background-color: var(--color-surface);
     border-radius: 12px;
@@ -295,23 +278,19 @@ body {
     color: var(--color-text-primary);
 }
 
-/* View 1 - Problem Locator */
 .view-1 .graph_card {
     border: 2px solid var(--view-1-accent);
     border-left: 4px solid var(--view-1-accent);
 }
 
-/* View 2 - Diagnostic Decomposition */
 .view-2 .graph_card {
     border-left: 4px solid var(--view-2-accent);
 }
 
-/* View 3 - Impact Validation */
 .view-3 .graph_card {
     border-left: 4px solid var(--view-3-accent);
 }
 
-/* ========== NAVIGATION STRIP ========== */
 .nav-strip {
     display: flex;
     align-items: center;
@@ -362,8 +341,6 @@ body {
     gap: 8px;
 }
 
-/* ========== BUTTONS ========== */
-/* Primary Button */
 .btn-primary {
     padding: 8px 16px;
     background: var(--color-primary);
@@ -389,7 +366,6 @@ body {
     cursor: not-allowed;
 }
 
-/* Secondary Button */
 .btn-secondary {
     padding: 8px 16px;
     background: var(--color-surface);
@@ -407,7 +383,6 @@ body {
     border-color: var(--color-text-muted);
 }
 
-/* Destructive / Clear Button */
 .clear-btn {
     padding: 4px 10px;
     border: 1px solid var(--color-error);
@@ -425,7 +400,6 @@ body {
     color: var(--color-text-inverse);
 }
 
-/* ========== FORMS & INPUTS ========== */
 input, select, textarea {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -451,7 +425,6 @@ input:disabled, select:disabled, textarea:disabled {
     cursor: not-allowed;
 }
 
-/* Dash Dropdown overrides */
 .Select-control {
     background-color: var(--color-surface) !important;
     border-color: var(--color-border) !important;
@@ -485,13 +458,11 @@ input:disabled, select:disabled, textarea:disabled {
     color: var(--color-primary) !important;
 }
 
-/* Dash Radio/Checkbox */
 .RadioItems label,
 .Checklist label {
     color: var(--color-text-primary);
 }
 
-/* ========== PLACEHOLDER SECTION ========== */
 .placeholder-section {
     background: linear-gradient(180deg, var(--color-surface-alt) 0%, var(--color-border) 100%);
     border-radius: 12px;
@@ -542,7 +513,6 @@ input:disabled, select:disabled, textarea:disabled {
     color: var(--color-text-secondary);
 }
 
-/* ========== WORKFLOW MINI INDICATOR ========== */
 .workflow-mini {
     display: flex;
     align-items: center;
@@ -557,7 +527,6 @@ input:disabled, select:disabled, textarea:disabled {
     font-size: 10px;
 }
 
-/* ========== TYPOGRAPHY ========== */
 h5 {
     color: var(--color-text-primary);
     font-weight: 600;
@@ -573,7 +542,6 @@ hr {
     margin: 15px 0;
 }
 
-/* Links */
 a {
     color: var(--color-primary);
     text-decoration: none;
@@ -584,7 +552,6 @@ a:hover {
     text-decoration: underline;
 }
 
-/* ========== STATUS COLORS ========== */
 .status-success {
     color: var(--color-success);
 }
@@ -603,7 +570,6 @@ a:hover {
 
 
 
-/* Clear selection button */
 #clear-selection-btn {
     background-color: "#FFFFFF";
     border-color: "#FFFFFF";
@@ -611,7 +577,6 @@ a:hover {
 }
 
 
-/* ========== SCROLL BEHAVIOR ========== */
 html {
     scroll-behavior: smooth;
 }
@@ -626,7 +591,6 @@ html {
     }
 }
 
-/* ========== RESPONSIVE: Tablet (< 1200px) ========== */
 @media (max-width: 1199px) {
     .dashboard-layout {
         padding: 15px;
@@ -638,7 +602,6 @@ html {
     }
 }
 
-/* ========== RESPONSIVE: Mobile (< 900px) ========== */
 @media (max-width: 899px) {
     .dashboard-layout {
         flex-direction: column;
@@ -700,7 +663,6 @@ html {
     }
 }
 
-/* ========== RESPONSIVE: Small Mobile (< 600px) ========== */
 @media (max-width: 599px) {
     .dashboard-layout {
         padding: 8px;

@@ -1,22 +1,7 @@
-# jbi100_app/views/menu.py
-"""
-BedFlow Diagnostic Dashboard - Control Panel
-=============================================
-Implements the left sidebar control panel with:
-- Diagnostic Focus (Radio buttons)
-- Context Visibility (Event toggles)
-- Service Filter (Dropdown)
-- Week Range Slider
-- Active Selection Display
-
-Design follows the specification for streamlined diagnostic workflow.
-"""
-
 from dash import dcc, html
 
 
 def generate_description_card():
-    """Generate the dashboard header/description card."""
     return html.Div(
         id="description-card",
         children=[
@@ -29,11 +14,9 @@ def generate_description_card():
 
 
 def generate_control_card(services: list[str], events: list[str], max_week: int):
-    """Generate the main control panel card with collapsible accordions."""
     return html.Div(
         id="control-card",
         children=[
-            # ========== DIAGNOSTIC FOCUS (Accordion) ==========
             html.Details(
                 className="accordion-section",
                 open=True,
@@ -77,7 +60,6 @@ def generate_control_card(services: list[str], events: list[str], max_week: int)
                     ),
                 ],
             ),
-            # ========== CONTEXT VISIBILITY (Accordion) ==========
             html.Details(
                 className="accordion-section",
                 open=True,
@@ -115,14 +97,12 @@ def generate_control_card(services: list[str], events: list[str], max_week: int)
                     ),
                 ],
             ),
-            # Hidden comparison mode (kept for backward compatibility)
             dcc.RadioItems(
                 id="comparison-mode",
                 options=[{"label": "Single Service", "value": "single"}],
                 value="single",
                 style={"display": "none"},
             ),
-            # ========== FILTERS (Accordion) ==========
             html.Details(
                 className="accordion-section",
                 open=True,
@@ -138,7 +118,6 @@ def generate_control_card(services: list[str], events: list[str], max_week: int)
                     html.Div(
                         className="accordion-content",
                         children=[
-                            # Service Filter
                             html.Label(
                                 "🏥 Service / Department",
                                 style={
@@ -159,7 +138,7 @@ def generate_control_card(services: list[str], events: list[str], max_week: int)
                                 clearable=False,
                                 style={"fontSize": "12px", "marginBottom": "12px"},
                             ),
-                            # Week Range
+                            
                             html.Label(
                                 "📅 Week Range",
                                 style={
@@ -189,7 +168,7 @@ def generate_control_card(services: list[str], events: list[str], max_week: int)
                     ),
                 ],
             ),
-            # ========== SELECTION STATUS ==========
+
             html.Div(
                 id="selection-info",
                 children=[
@@ -233,17 +212,6 @@ def generate_control_card(services: list[str], events: list[str], max_week: int)
 
 
 def make_menu_layout(services: list[str], events: list[str] = None, max_week: int = 52):
-    """
-    Generate the complete menu layout for the left sidebar.
-
-    Args:
-        services: List of service/department names
-        events: List of event types (optional)
-        max_week: Maximum week number for the slider
-
-    Returns:
-        List of Dash components for the menu
-    """
     if events is None:
         events = ["none", "flu", "donation", "strike"]
     return [

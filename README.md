@@ -1,69 +1,59 @@
-# JBI100-example-app
+# BedFlow Diagnostic Dashboard
 
-## About this app
+This project is a data visualization application built with Python and Dash, designed to analyze and diagnose hospital bed flow issues. It implements a structured workflow: Locate → Diagnose → Validate → Explain.
 
-You can use this as a basic template for your JBI100 visualization project.
+## Project Overview
 
-## Requirements
+The dashboard consists of three coordinated views:
 
-* Python 3 (add it to your path (system variables) to make sure you can access it from the command prompt)
-* Git (https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+1.  **Problem Locator (Heatmap)**: Identified bottlenecks and high-traffic areas.
+2.  **Diagnostic Decomposition (Multi-factor Timeline)**: Analyzes trends over time across multiple factors.
+3.  **Impact Validation (Morale & Satisfaction)**: Correlates operational metrics with staff and patient satisfaction.
 
-## How to run this app
+## Prerequisites
 
-We suggest you to create a virtual environment for running this app with Python 3. Clone this repository 
-and open your terminal/command prompt in the root folder.
+- Python 3.11 or higher
+- pip (Python package installer)
 
+## Installation & Setup
 
-download a zip file of this folder, unzip it and copy it to a folder of choice on your computer
+1.  **Clone the repository** (or download the source code):
 
-open a command prompt and run the following commands:
+    ```bash
+    git clone <repository-url>
+    cd visualization
+    ```
 
-```
-> cd <path to you folder of choice>\dashframework-main\dashframework-main 
-> python -m venv venv
+2.  **Create a virtual environment (Optional but recommended):**
+    - On macOS/Linux:
+      ```bash
+      python3 -m venv venv
+      source venv/bin/activate
+      ```
+    - On Windows:
+      ```bash
+      python -m venv venv
+      venv\Scripts\activate
+      ```
 
-```
-If python is not recognized use python3 instead
+3.  **Install the required dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-In Windows: 
+## Running the Application
 
-```
-> venv\Scripts\activate
+1.  Start the Dash server by running the main entry script:
 
-```
-In Unix system:
-```
-> source venv/bin/activate
-```
+    ```bash
+    python app.py
+    ```
 
-(Instead of a python virtual environment you can also use an anaconda virtual environment.
- 
-Requirements:
+2.  Open your web browser and navigate to the local server address shown in the terminal (usually `http://127.0.0.1:8050/`).
 
-• Anaconda (https://www.anaconda.com/) or Miniconda (https://docs.conda.io/en/latest/miniconda.html)
+## Usage Guidelines
 
-• The difference is that Anaconda has a user-friendly UI but requires a lot of space, and Miniconda is Command Prompt based, no UI, but requires considerably less space.
-
-Then you should replace the lines: python -m venv venv and venv\Scripts\activate or source venv/bin/activate with the following:
-
-```
-> conda create -n yourenvname
-> conda activate yourenvname
-```
-)
-
-Install all required packages by running:
-```
-> pip install -r requirements.txt
-```
-
-Run this app locally with:
-```
-> python app.py
-```
-You will get a http link, open this in your browser to see the results. You can edit the code in any editor (e.g. Visual Studio Code) and if you save it you will see the results in the browser.
-
-## Resources
-
-* [Dash](https://dash.plot.ly/)
+- Use the **Sidebar Menu** to filter data or navigate sections.
+- Interact with the **Heatmap** to identify specific problem areas.
+- Analyze the **Timeline** to see how metrics evolve.
+- Check the **Impact Validation** view to understand the human side of the data.
